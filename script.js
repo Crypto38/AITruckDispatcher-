@@ -182,4 +182,175 @@ function suggestCounterOffer(result) {
   if (rpm >= 2.5) {
     targetRpm = 3.0;
   } else if (rpm >= 2.1) {
-    targetRpm
+    targetRpm = 2.5;
+  } else {
+    targetRpm = 2.25;
+  }
+
+  const targetPay = targetRpm * result.miles;
+  const extra = targetPay - result.pay;
+
+  return (
+    "Right now this load is around $" +
+    rpm.toFixed(2) +
+    " RPM. I'd push for about $" +
+    targetPay.toFixed(0) +
+    " total pay (≈ $" +
+    extra.toFixed(0) +
+    " more) to bring it closer to ~" +
+    targetRpm.toFixed(2) +
+    " RPM.\n\n" +
+    "Tip: start a little higher so you can 'meet in the middle' and still land close to that target."
+  );
+}
+
+function amazonRelayTips() {
+  return [
+    "Amazon Relay safety / score tips:",
+    "- Protect your on-time: leave early for FC / relay yards, assume delays at the gate.",
+    "- Don’t spam-cancel: too many cancels will crush your score. Only cancel true trash loads.",
+    "- Watch for fake RPM: high rate but crazy deadhead, bad weather, or impossible appointment times.",
+    "- Keep a clean record: no late pickups, no no-shows, no safety incidents.",
+    "- Mix in some 'easy wins': short, simple loads at decent rates to keep score and cash flow healthy."
+  ].join('\n');
+}
+
+// ==== Chat routing ====
+
+function handleChat(text) {
+  const lower = text.toLowerCase().trim();
+
+  if (!lower) {
+    addMessage(
+      "Tell me about a load, lane, rate, or ask about Amazon Relay strategy.",
+      'bot'
+    );
+    return;
+  }
+
+  // Did they paste a full load?
+  const parsed = parseLoadFromText(text);
+  const looksLikeLoad =
+    parsed &&
+    (lower.includes('load') ||
+      lower.includes('lane') ||
+      lower.includes('rate') ||
+      lower.includes('$') ||
+      lower.includes('miles'));
+
+  if (parsed && looksLikeLoad) {
+    handleParsedLoad(parsed, lower);
+    return;
+  }
+
+  // Negotiation / counter offer
+  if (
+    lower.includes('counter') ||
+    lower.includes('negotiate') ||
+    lower.includes('ask for') ||
+    lower.includes('how much should i') ||
+    lower.includes('what should i ask')
+  ) {
+    if (!lastLoadAnalysis) {
+      addMessage(
+        "Paste a full load first (pay, miles, deadhead, fuel, mpg) and I'll suggest a counter-offer.",
+        'bot'
+      );
+    } else {
+      addMessage(suggestCounterOffer(lastLoadAnalysis), 'bot');
+    }
+    return;
+  }
+
+  // RPM explanation
+  if (lower.includes('rpm')) {
+    addMessage(
+      "RPM = pay ÷ LOADED miles.\n" +
+        "Example: $1200 on 400 loaded miles = $3.00 RPM.\n" +
+        "General targets (varies by market):\n" +
+        "- $3.00+ 🔥 short hops / tough markets\n" +
+        "- $2.50–$3.00 ✅ solid\n" +
+        "- $2.25–$2.50 ⚠️ maybe, depends on lane\n" +
+        "- Under $2.25 🚫 usually trash unless it's super easy / light.",
+      'bot'
+    );
+    return;
+  }
+
+  // Amazon Relay / safety / score
+  if (
+    lower.includes('amazon') ||
+    lower.includes('relay') ||
+    lower.includes('score')
+  ) {
+    addMessage(amazonRelayTips(), 'bot');
+    return;
+  }
+
+  if (
+    lower.includes('safety') ||
+    lower.includes('safe') ||
+    lower.includes('risk') ||
+    lower.includes('dangerous')
+  ) {
+    addMessage(
+      "Safety filter:\n" +
+        "- Low rate + tight appointment + bad weather = skip it.\n" +
+        "- New drivers: avoid mountains in snow, NYC / tight cities at rush hour, and crazy-tight appointment windows.\n" +
+        "- If risk is high, the RPM has to be VERY strong or it's not worth it.",
+      'bot'
+    );
+    return;
+  }
+
+  // Very simple multi-truck guidance
+  if (
+    lower.includes('two trucks') ||
+    lower.includes('3 trucks') ||
+    lower.includes('three trucks') ||
+    lower.includes('fleet') ||
+    lower.includes('which truck') ||
+    lower.includes('assign')
+  ) {
+    addMessage(
+      "Basic fleet logic:\n" +
+        "- Give best-paying, time-sensitive loads to your most reliable driver.\n" +
+        "- Keep one truck flexible for last-minute high-pay spot loads.\n" +
+        "- Avoid stacking tight back-to-back appointments on the same truck; leave buffer time.\n" +
+        "- Match light loads to weaker trucks or new drivers so they can learn on easier runs.",
+      'bot'
+    );
+    return;
+  }
+
+  // Fallback
+  addMessage(
+    "Got it. Paste a full load (pay, miles, deadhead, fuel, mpg) and I'll break it down — or ask about RPM, negotiation, Amazon Relay, or safety.",
+    'bot'
+  );
+}
+
+// ==== Send message from input ====
+
+function sendMessage() {
+  const input = document.getElementById('userInput');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  addMessage(text, 'user');
+  input.value = '';
+  handleChat(text);
+}
+
+// Allow pressing Enter to send (if keyboard has Enter)
+document.addEventListener('DOMContentLoaded', function () {
+  const input = document.getElementById('userInput');
+  if (input) {
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  }
+});
