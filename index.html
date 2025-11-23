@@ -1,15 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>AITruckDispatcher v10</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>AITruckDispatcher v10</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<h1>AITruckDispatcher v10</h1>
-<div id="chatbox" style="white-space:pre-wrap;height:300px;overflow:auto;border:1px solid #333;padding:10px;"></div>
-<input id="user" style="width:80%;padding:8px;">
-<button onclick="sendIt()">Send</button>
-<script src="script.js"></script>
+  <h1>AITruckDispatcher v10</h1>
+
+  <div id="chatBox" class="chat-box"></div>
+
+  <div class="input-row">
+    <input
+      id="userInput"
+      type="text"
+      placeholder="Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive"
+    />
+    <button id="sendBtn">Send</button>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
