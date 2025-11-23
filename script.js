@@ -1,48 +1,79 @@
 function addMessage(text, sender) {
-  const box = document.getElementById('chatBox');
-  const div = document.createElement('div');
-  div.className = 'msg ' + sender;
-  div.textContent = text;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
+    const box = document.getElementById('chatbox');
+    const div = document.createElement('div');
+    div.className = 'msg ' + sender;
+    div.textContent = text;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
 }
 
 const OPENING_LINES = [
-  "Hello, I'm your AITruckDispatcher. Tell me a load and I’ll break it down for you.",
-  "You can paste a load description and I'll estimate RPM, profit, and strength.",
-  "Running Amazon Relay? Ask me how to protect your score or avoid bad loads."
+    "Hello, I'm your AITruckDispatcher. Tell me about a load, lane, rate, or Amazon Relay plan.",
 ];
 
 addMessage(OPENING_LINES[0], 'bot');
 
 function basicReply(text) {
-  const lower = text.toLowerCase();
+    const lower = text.toLowerCase();
 
-  if (lower.includes('rpm') || lower.includes('rate')) {
-    return "To check RPM, divide total pay by loaded miles. Enter both and I'll calculate.";
-  }
+    if (lower.includes('rpm') || lower.includes('rate')) {
+        return "To calculate RPM: rate ÷ miles. Paste the load and I'll break it down.";
+    }
 
-  if (lower.includes('hello') || lower.includes('hi')) {
-    return "Hello! Send me any load details and I’ll analyze it immediately.";
-  }
+    if (lower.includes('relay')) {
+        return "Amazon Relay tip: Stay above 90% on-time, minimize deadhead, and accept roundtrips whenever possible.";
+    }
 
-  if (lower.includes('relay')) {
-    return "Amazon Relay strategy: Keep on-time above 97%, avoid canceled blocks, and choose short deadhead lanes.";
-  }
+    if (lower.includes('load')) {
+        return "Paste the full load (pay, miles, deadhead) and I’ll analyze it for you.";
+    }
 
-  return "Got it. Send me the load (pay, miles, deadhead) and I’ll break it down.";
+    return "Got it. Tell me a load, lane, rate, or question about Amazon Relay.";
 }
 
 function sendMessage() {
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
+    const input = document.getElementById("userInput");
+    const text = input.value.trim();
+    if (!text) return;
+    addMessage(text, 'user');
 
-  if (!text) return;
+    const reply = basicReply(text);
+    addMessage(reply, 'bot');
 
-  addMessage(text, 'user');
+    input.value = "";
+}
 
-  const reply = basicReply(text);
-  setTimeout(() => addMessage(reply, 'bot'), 400);
+function analyzeLoad() {
+    const pay = parseFloat(document.getElementById("pay").value);
+    const miles = parseFloat(document.getElementById("miles").value);
+    const deadhead = parseFloat(document.getElementById("deadhead").value);
+    const fuel = parseFloat(document.getElementById("fuel").value);
+    const mpg = parseFloat(document.getElementById("mpg").value);
 
-  input.value = '';
+    if (isNaN(pay) || isNaN(miles) || isNaN(deadhead) || isNaN(fuel) || isNaN(mpg)) {
+        document.getElementById("analysis").textContent = "❗ Enter all values correctly.";
+        return;
+    }
+
+    const totalMiles = miles + deadhead;
+    const fuelUsed = totalMiles / mpg;
+    const fuelCost = fuelUsed * fuel;
+    const net = pay - fuelCost;
+    const rpm = pay / miles;
+
+    let strength = "Weak Load ❌";
+    if (rpm >= 2.25) strength = "Strong Load 💰";
+    if (rpm >= 2.75) strength = "🔥 Excellent Load";
+
+    const result =
+        `Pay: $${pay.toFixed(2)}
+Loaded Miles: ${miles}
+Deadhead Miles: ${deadhead}
+Fuel Cost: $${fuelCost.toFixed(2)}
+Net Profit: $${net.toFixed(2)}
+RPM: $${rpm.toFixed(2)}
+
+Verdict: ${strength}`;
+
+    document.getElementById("analysis").textContent = result;
 }
