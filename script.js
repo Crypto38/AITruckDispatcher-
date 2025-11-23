@@ -1,88 +1,113 @@
-// ===== AITruckDispatcher v20 – Smart RPM + Counter + Broker Script =====
+// ===== AITruckDispatcher v20 - Smart Load Evaluator =====
 
-// Grab UI elements
-const chatBox  = document.getElementById("chatBox");
+// connect DOM elements
+const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
-const sendBtn   = document.getElementById("sendBtn");
+const sendBtn = document.getElementById("sendBtn");
 
-// Add a message to the screen
-function addMessage(text) {
-  const div = document.createElement("div");
-  div.className = "msg-bot";
-  div.textContent = text;
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
+// message display function
+function addMessage(text, sender = "ai") {
+    const div = document.createElement("div");
+    div.className = sender === "user" ? "msg-user" : "msg-ai";
+    div.textContent = text;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Initial message
+// initial display line
 addMessage(
-  "AITruckDispatcher v20 loaded. " +
-  "Paste a load like: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive from Atlanta to Chicago."
+    "AITruckDispatcher v20 loaded. Paste a load like: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive from Atlanta to Chicago."
 );
 
-// Handle send / Enter
+// main handling logic
 function handleSend() {
-  const text = userInput.value.trim();
-  if (!text) return;
+    const text = userInput.value.trim();
+    if (!text) return;
 
-  // show what you typed
-  const div = document.createElement("div");
-  div.className = "msg-user";
-  div.textContent = "You: " + text;
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
+    addMessage("You: " + text, "user");
+    userInput.value = "";
 
-  userInput.value = "";
-  handleLoadText(text);
+    processLoad(text);
 }
 
 sendBtn.onclick = handleSend;
 userInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") handleSend();
+    if (e.key === "Enter") handleSend();
 });
 
-// Core brain – parse load & give advice
-function handleLoadText(text) {
-  const lower = text.toLowerCase();
+// PROCESSING THE LOAD STRING
+function processLoad(input) {
+    // extract all numbers from user input
+    const nums = input.match(/(\d+(\.\d+)?)/g);
 
-  // grab numbers in order
-  const nums = lower.match(/[\d.]+/g) || [];
+    if (!nums || nums.length < 4) {
+        addMessage("Invalid format. Use: pay miles deadhead fuel mpg(optional) style(optional).");
+        return;
+    }
 
-  const pay       = parseFloat(nums[0] || 0); // line haul
-  const miles     = parseFloat(nums[1] || 0); // loaded miles
-  const dead      = parseFloat(nums[2] || 0); // deadhead miles
-  const fuelPrice = parseFloat(nums[3] || 4.00); // fuel per gallon
-  const mpg       = parseFloat(nums[4] || 7.0);  // truck mpg
+    // assign required values
+    const pay = parseFloat(nums[0]);
+    const miles = parseFloat(nums[1]);
+    const dead = parseFloat(nums[2]);
+    const fuelPrice = parseFloat(nums[3]);
+    const mpg = nums[4] ? parseFloat(nums[4]) : 7.0;
 
-  // optional style: aggressive / normal / soft
-  let style = "normal";
-  if (lower.includes("aggressive")) style = "aggressive";
-  if (lower.includes("soft"))       style = "soft";
+    // extract style if the word aggressive or normal is present
+    const style = input.toLowerCase().includes("aggressive")
+        ? "AGGRESSIVE"
+        : "NORMAL";
 
-  // optional route: "from X to Y"
-  let origin = "";
-  let dest   = "";
-  const routeMatch = /from\s+(.+?)\s+to\s+(.+?)(?:$|\s)/i.exec(text);
-  if (routeMatch) {
-    origin = routeMatch[1].trim();
-    dest   = routeMatch[2].trim();
-  }
+    // use a default mpg if insane value provided
+    const truckMPG = mpg < 3 || mpg > 15 ? 7 : mpg;
 
-  // math
-  const totalMiles = miles + dead;
-  const fuelCost   = totalMiles > 0 && mpg > 0
-    ? (totalMiles / mpg) * fuelPrice
-    : 0;
-  const net        = pay - fuelCost;
-  const rpm        = miles > 0 ? pay / miles : 0;
+    // compute values
+    const fuelCost = ((miles + dead) / truckMPG) * fuelPrice;
+    const net = pay - fuelCost;
+    const rpm = pay / miles;
 
-  // verdict + suggested counter
-  let verdict = "";
-  let action  = "";
-  let bumpLow = pay;
-  let bumpHigh = pay;
+    // determine verdict
+    let verdict = "";
+    if (rpm >= 3.00) verdict = "🔥 Excellent Load.";
+    else if (rpm >= 2.50) verdict = "💎 Strong Load.";
+    else if (rpm >= 2.20) verdict = "👍 Decent Load.";
+    else verdict = "⚠️ Weak Load. COUNTER.";
 
-  if (rpm >= 3.0) {
-    verdict  = "🔥 Amazing load. TAKE IT or counter just a little higher.";
-    action   = "TAKE or small COUNTER.";
-    bumpLow  = pay + 25;
+    // compute suggested counter
+    let counterLow = pay;
+    let counterHigh = pay;
+
+    if (style === "AGGRESSIVE") {
+        counterLow = Math.round(pay + 60);
+        counterHigh = Math.round(pay + 110);
+    } else {
+        counterLow = Math.round(pay + 10);
+        counterHigh = Math.round(pay + 60);
+    }
+
+    // broker message builder
+    const brokerMessage = 
+`Hi, this is [YOUR NAME] with [CARRIER]. Looking at your load. 
+For about ${miles} loaded and ${dead} deadhead at fuel around $${fuelPrice}/gal 
+and truck mpg around ${truckMPG}, $${pay}.00 is a bit tight for us.
+
+To make this work in a ${style.toLowerCase()} way and still run it profitably, 
+we’d need to be closer to about $${counterLow}–$${counterHigh} all-in.
+
+That keeps us near $${(counterLow/miles).toFixed(2)}+ per loaded mile 
+and leaves room after fuel (roughly $${net.toFixed(2)} net). 
+Can you get me closer to that range?`;
+
+    // final output
+    addMessage(
+`Pay: $${pay}
+Miles: ${miles}
+Deadhead: ${dead}
+Fuel Cost: $${fuelCost.toFixed(2)}
+Net Profit: $${net.toFixed(2)}
+RPM: ${rpm.toFixed(2)}
+Style: ${style}
+Verdict: ${verdict}
+Suggested counter: $${counterLow}–$${counterHigh}
+Broker message: ${brokerMessage}`
+    );
+}
