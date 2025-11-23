@@ -1,36 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8" />
-    <title>AITruckDispatcher</title>
-    <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <title>AITruckDispatcher</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
 <header class="hero">
-    <h1>AITruckDispatcher</h1>
-    <p>Your 24/7 AI-powered truck dispatch assistant for Amazon Relay & load boards.</p>
+  <h1>AITruckDispatcher</h1>
+  <p>Your 24/7 AI-powered truck dispatch assistant for Amazon Relay & load boards.</p>
 </header>
 
 <main class="main">
 
-    <!-- Dispatcher Chat -->
-    <section class="card">
-        <h2>Dispatcher AI Chat</h2>
-        <p class="subtitle">Ask about loads, lanes, RPM, routes, or Amazon Relay strategy.</p>
-        <div id="chatbox"></div>
-        <div class="input-row">
-            <input id="userInput" type="text" placeholder="Ask the dispatcher about a load..." />
-            <button onclick="sendMessage()">Send</button>
-        </div>
-    </section>
+  <!-- Dispatcher Chat -->
+  <section class="card">
+    <h2>Dispatcher AI Chat</h2>
+    <p class="subtitle">Ask about loads, lanes, RPM, routes, or Amazon Relay strategy.</p>
+    <div id="chatbox"></div>
 
-    <!-- Load Profit Tool -->
-    <section class="card">
-        <h2>Load Profit Checker (Level 2 Demo)</h2>
-        <p class="subtitle">Enter a load to see profitability.</p>
+    <div class="input-row">
+      <input id="userInput" type="text" placeholder="Ask the dispatcher about a load..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </section>
 
-        <div class="form-grid">
-            <label>
-                Line Haul Pay ($)
-                <input id="pay" type="number
+  <!-- Load Profit Tool -->
+  <section class="card">
+    <h2>Load Profit Checker</h2>
+    <p class="subtitle">Enter a load to see if it looks strong or weak.</p>
+
+    <div class="form-grid">
+      <label>
+        Line Haul Pay ($)
+        <input id="pay" type="number" />
+      </label>
+
+      <label>
+        Loaded Miles
+        <input id="miles" type="number" />
+      </label>
+
+      <label>
+        Deadhead Miles
+        <input id="deadhead" type="number" />
+      </label>
+
+      <label>
+        Fuel Cost per Gallon ($)
+        <input id="fuel" type="number" value="4.00" />
+      </label>
+
+      <label>
+        Truck MPG
+        <input id="mpg" type="number" value="7" />
+      </label>
+    </div>
+
+    <button onclick="analyzeLoad()">Analyze Load</button>
+    <pre id="analysis" class="analysis"></pre>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
