@@ -5,96 +5,37 @@
   <title>AITruckDispatcher v30</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <div class="app">
-    <header class="app-header">
-      <div class="badge-row">
-        <span class="badge-version">V30</span>
-        <span class="badge-mode">AITruckDispatcher</span>
+
+  <h1>AITruckDispatcher v30</h1>
+
+  <div id="chatBox" class="chat-box"></div>
+
+  <div class="input-row">
+    <input id="userInput" type="text"
+      placeholder="Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive" />
+    <button id="sendBtn">Send</button>
+
+    <!-- TRUCK DROPDOWN BUTTON -->
+    <div class="truck-select">
+      <span id="truckBtn">Truck 1</span>
+      <div id="truckMenu" class="truck-menu">
+        <div class="truck-option">Truck 1</div>
+        <div class="truck-option">Truck 2</div>
+        <div class="truck-option">Truck 3</div>
+        <div class="truck-option">Truck 4</div>
+        <div class="truck-option">Truck 5</div>
+        <div class="truck-option">Truck 6</div>
+        <div class="truck-option">Truck 7</div>
+        <div class="truck-option">Truck 8</div>
+        <div class="truck-option">Truck 9</div>
+        <div class="truck-option">Truck 10</div>
       </div>
-      <p class="subtitle">
-        Load analyzer · counter-offer helper · small-fleet assistant.
-      </p>
-    </header>
-
-    <!-- Main chat / output window -->
-    <section class="panel chat-panel">
-      <div id="chatBox" class="chat-box"></div>
-
-      <div class="controls-row">
-        <div class="input-wrapper">
-          <input
-            id="userInput"
-            type="text"
-            autocomplete="off"
-            placeholder="Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive"
-          />
-        </div>
-        <button id="micBtn" class="btn icon-btn" title="Voice input">
-          🎙
-        </button>
-        <button id="sendBtn" class="btn primary-btn">
-          Send
-        </button>
-      </div>
-
-      <div class="toggles-row">
-        <label class="toggle">
-          <input type="checkbox" id="voiceOutToggle" />
-          <span>Voice reply</span>
-        </label>
-
-        <button id="copyScriptBtn" class="btn ghost-btn">
-          Copy broker script
-        </button>
-
-        <div class="truck-select-wrapper">
-          <label for="truckSelect">Truck:</label>
-          <select id="truckSelect"></select>
-        </div>
-      </div>
-    </section>
-
-    <!-- Profit helper -->
-    <section class="panel helper-panel">
-      <h2>Profit / Week Helper</h2>
-      <p class="helper-text">
-        This tool assumes <strong>1 similar load per day · 5 days / week</strong>.
-      </p>
-      <div class="helper-grid">
-        <div class="helper-item">
-          <span class="label">Last load net profit:</span>
-          <span id="lastNet" class="value">$0.00</span>
-        </div>
-        <div class="helper-item">
-          <span class="label">Daily profit (1 load):</span>
-          <span id="dayProfit" class="value">$0.00</span>
-        </div>
-        <div class="helper-item">
-          <span class="label">Weekly profit (5 loads):</span>
-          <span id="weekProfit" class="value">$0.00</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- History -->
-    <section class="panel history-panel">
-      <div class="history-header-row">
-        <h2>Recent Loads</h2>
-        <span class="history-hint">(Tap to re-run)</span>
-      </div>
-      <ul id="historyList" class="history-list"></ul>
-    </section>
-
-    <footer class="app-footer">
-      <p>
-        Format:
-        <strong>pay miles deadhead fuel mpg(optional) style(optional)</strong>.
-        Style can be <strong>normal</strong> or <strong>aggressive</strong>.
-      </p>
-    </footer>
+    </div>
   </div>
 
   <script src="script.js"></script>
+
 </body>
 </html>
