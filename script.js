@@ -1,89 +1,124 @@
-
-function addMessage(text, sender) {
-  const box = document.getElementById('chatbox');
-  const div = document.createElement('div');
-  div.className = 'msg ' + sender;
-  div.textContent = text;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
+/* Global Styles */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #0d1117;
+  color: #c9d1d9;
 }
 
-const OPENING_LINES = [
-  "Hello, I'm your AITruckDispatcher. Tell me about a load or lane you're looking at.",
-  "You can paste a load description and I'll help you check RPM, deadhead, and risk.",
-  "Running Amazon Relay? Ask me how to protect your score while still making money."
-];
-
-addMessage(OPENING_LINES[0], 'bot');
-
-function basicReply(text) {
-  const lower = text.toLowerCase();
-  if (lower.includes('rpm') || lower.includes('rate per mile')) {
-    return "To check RPM, divide total pay by total miles including deadhead. Over $2.50/mile on Amazon short lanes is usually decent, under $1.80 is weak in many markets.";
-  }
-  if (lower.includes('amazon')) {
-    return "On Amazon Relay, the game is: protect your score, minimize cancellations, and combine short hops into strong daily totals. Avoid cheap loads that drag your score down for small money.";
-  }
-  if (lower.includes('deadhead')) {
-    return "High deadhead kills profit. Try to keep deadhead under 15–20% of your loaded miles. If you must deadhead, it's better to do it into a strong freight market than into a dead zone.";
-  }
-  if (lower.includes('lane') || lower.includes('route')) {
-    return "Strong lanes have consistent freight both ways. Weak lanes pay good one way but force you into cheap reloads or long deadhead. I can help you compare options if you give me city-to-city and pay.";
-  }
-  if (lower.includes('10 trucks') || lower.includes('fleet')) {
-    return "For a 10-truck fleet, standardize rules: minimum RPM, max deadhead, approved markets, and a weekly target per truck. AITruckDispatcher helps you apply the same rules to every load, every day.";
-  }
-  if (lower.includes('negotiate') || lower.includes('counter')) {
-    return "A simple negotiation script: 'Thanks for the offer. For this lane and miles, we would need $___ to make this work today. Can you get closer to that? We can run it on-time with no issues.'";
-  }
-  return "Got it. If you want a deeper check, tell me pay, loaded miles, and deadhead, or describe the load and what you are unsure about (price, timing, market, etc.).";
+header.hero {
+  text-align: center;
+  padding: 30px 10px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
 }
 
-function sendMessage() {
-  const input = document.getElementById('userInput');
-  const text = input.value.trim();
-  if (!text) return;
-  addMessage(text, 'user');
-  input.value = '';
-
-  setTimeout(() => {
-    const response = basicReply(text);
-    addMessage(response, 'bot');
-  }, 600);
+h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #58a6ff;
 }
 
-function analyzeLoad() {
-  const pay = parseFloat(document.getElementById('pay').value || '0');
-  const miles = parseFloat(document.getElementById('miles').value || '0');
-  const deadhead = parseFloat(document.getElementById('deadhead').value || '0');
-  const fuel = parseFloat(document.getElementById('fuel').value || '0');
-  const mpg = parseFloat(document.getElementById('mpg').value || '0');
+p {
+  margin: 5px 0 0;
+  color: #8b949e;
+}
 
-  const analysisEl = document.getElementById('analysis');
+.main {
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 0 10px 20px;
+}
 
-  if (!pay || !miles) {
-    analysisEl.textContent = 'Enter at least pay and loaded miles to analyze a load.';
-    return;
+/* Cards */
+.card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+}
+
+.subtitle {
+  color: #8b949e;
+  margin-bottom: 10px;
+}
+
+/* Chatbox */
+#chatbox {
+  height: 200px;
+  overflow-y: auto;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+}
+
+.msg {
+  margin: 5px 0;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.msg.bot {
+  background-color: #1f6feb;
+  color: white;
+}
+
+.msg.user {
+  background-color: #30363d;
+}
+
+/* Inputs */
+.input-row {
+  display: flex;
+  gap: 6px;
+}
+
+input[type="text"],
+input[type="number"] {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  color: #c9d1d9;
+  border-radius: 4px;
+}
+
+button {
+  padding: 8px 12px;
+  background: #238636;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #2ea043;
+}
+
+/* Profit Checker */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+label {
+  font-size: 13px;
+}
+
+#analysis {
+  margin-top: 10px;
+  white-space: pre-wrap;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  padding: 10px;
+  border-radius: 6px;
+  min-height: 80px;
+  font-size: 13px;
   }
-
-  const totalMiles = miles + (deadhead || 0);
-  const rpm = pay / totalMiles;
-  const gallons = totalMiles / (mpg || 7);
-  const fuelCost = gallons * (fuel || 4);
-  const roughProfit = pay - fuelCost;
-
-  let verdict = '';
-  if (rpm >= 2.5) verdict = '🔥 Strong RPM. This looks like a solid starting point, especially if it keeps you in or moves you into a good freight market.';
-  else if (rpm >= 2.0) verdict = '🟡 Decent but not amazing. This might work if it sets you up for a strong reload or keeps your Amazon score healthy.';
-  else verdict = '🔻 Weak RPM. Only worth it if it saves your score, gets you out of a bad area, or you have no better options today.';
-
-  const text =
-    'Total miles (with deadhead): ' + totalMiles.toFixed(0) + ' mi\n' +
-    'Estimated RPM: $' + rpm.toFixed(2) + '/mi\n' +
-    'Estimated fuel cost: $' + fuelCost.toFixed(0) + '\n' +
-    'Very rough profit after fuel: $' + roughProfit.toFixed(0) + '\n\n' +
-    'Verdict: ' + verdict + '\n\n' +
-    'Reminder: This is a demo Level 2 logic model. In production, AITruckDispatcher would also check market conditions, score impact, and reload options.';
-
-  analysisEl.textContent = text;
-}
