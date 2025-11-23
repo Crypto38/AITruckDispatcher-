@@ -2,40 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AITruckDispatcher v30</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
+  <div class="app">
+    <h1>AITruckDispatcher v30</h1>
 
-  <h1>AITruckDispatcher v30</h1>
+    <div class="panel">
+      <!-- MAIN INPUT BOX -->
+      <textarea
+        id="input"
+        class="load-input"
+        placeholder="Type a load like: 1500 520 80"
+      ></textarea>
 
-  <div id="chatBox" class="chat-box"></div>
+      <!-- CONTROLS ROW -->
+      <div class="controls">
+        <!-- Example hint under the box -->
+        <span class="example">
+          Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive
+        </span>
 
-  <div class="input-row">
-    <input id="userInput" type="text"
-      placeholder="Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive" />
-    <button id="sendBtn">Send</button>
+        <!-- Send button -->
+        <button id="sendBtn" class="send-btn">Send</button>
 
-    <!-- TRUCK DROPDOWN BUTTON -->
-    <div class="truck-select">
-      <span id="truckBtn">Truck 1</span>
-      <div id="truckMenu" class="truck-menu">
-        <div class="truck-option">Truck 1</div>
-        <div class="truck-option">Truck 2</div>
-        <div class="truck-option">Truck 3</div>
-        <div class="truck-option">Truck 4</div>
-        <div class="truck-option">Truck 5</div>
-        <div class="truck-option">Truck 6</div>
-        <div class="truck-option">Truck 7</div>
-        <div class="truck-option">Truck 8</div>
-        <div class="truck-option">Truck 9</div>
-        <div class="truck-option">Truck 10</div>
+        <!-- Truck selector -->
+        <div class="truck-select">
+          <button
+            id="truckBtn"
+            class="truck-btn"
+            type="button"
+            onclick="toggleTruckMenu()"
+          >
+            Truck 1
+          </button>
+          <ul id="truckMenu" class="truck-menu">
+            <li onclick="selectTruck(1)">Truck 1</li>
+            <li onclick="selectTruck(2)">Truck 2</li>
+            <li onclick="selectTruck(3)">Truck 3</li>
+            <li onclick="selectTruck(4)">Truck 4</li>
+            <li onclick="selectTruck(5)">Truck 5</li>
+            <li onclick="selectTruck(6)">Truck 6</li>
+            <li onclick="selectTruck(7)">Truck 7</li>
+            <li onclick="selectTruck(8)">Truck 8</li>
+            <li onclick="selectTruck(9)">Truck 9</li>
+            <li onclick="selectTruck(10)">Truck 10</li>
+          </ul>
+        </div>
       </div>
+
+      <!-- RESULT AREA -->
+      <pre id="result" class="result-box"></pre>
     </div>
   </div>
 
+  <!-- JS MUST BE AT THE END -->
   <script src="script.js"></script>
-
 </body>
 </html>
