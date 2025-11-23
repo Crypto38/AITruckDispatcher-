@@ -2,21 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AITruckDispatcher v10</title>
+  <title>AITruckDispatcher v30</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>AITruckDispatcher v10</h1>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-title">
+        <span class="badge">v30</span>
+        <span>AITruckDispatcher</span>
+      </div>
+      <div class="app-subtitle">
+        Load analyzer + counter-offer helper for small fleets.
+      </div>
+    </header>
 
-  <div id="chatBox" class="chat-box"></div>
+    <main class="app-main">
+      <div id="chatBox" class="chat-box"></div>
 
-  <div class="input-row">
-    <input
-      id="userInput"
-      type="text"
-      placeholder="Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive"
-    />
-    <button id="sendBtn">Send</button>
+      <div class="input-area">
+        <input
+          id="userInput"
+          type="text"
+          autocomplete="off"
+          placeholder="Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive"
+        />
+        <button id="sendBtn" type="button">Send</button>
+      </div>
+
+      <div class="hint">
+        Format: <strong>pay miles deadhead fuel mpg(optional) style(optional)</strong>  
+        Style can be <strong>normal</strong> or <strong>aggressive</strong>.
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <span>Level 30A · Single-truck / small fleet dispatcher helper</span>
+    </footer>
   </div>
 
   <script src="script.js"></script>
