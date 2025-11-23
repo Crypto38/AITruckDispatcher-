@@ -398,3 +398,24 @@ addMessage(
   "AITruckDispatcher v31 loaded. Select a truck, then enter: pay miles deadhead fuel mpg(optional) style(optional).",
   "ai"
 );
+// ===== TRUCK DROPDOWN FIX =====
+
+// Open/close truck menu
+const truckBtn = document.getElementById("truckBtn");
+const truckMenu = document.getElementById("truckMenu");
+
+if (truckBtn && truckMenu) {
+    truckBtn.addEventListener("click", () => {
+        truckMenu.style.display =
+            truckMenu.style.display === "block" ? "none" : "block";
+    });
+
+    // Select a truck
+    const truckOptions = truckMenu.querySelectorAll(".truck-option");
+    truckOptions.forEach((opt) => {
+        opt.addEventListener("click", () => {
+            truckBtn.innerText = opt.innerText;   // show selected truck
+            truckMenu.style.display = "none";     // close dropdown
+        });
+    });
+}
