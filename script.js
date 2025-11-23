@@ -1,277 +1,343 @@
-// =======================================
-// LEVEL 6 BRAIN – AITruckDispatcher
-// Style B: Normal Negotiator
-// =======================================
+// ==== LEVEL 6 BRAIN FOR AITRUCKDISPATCHER ====
+// Chat + Load Calculator + Strategy + Lane Memory (in-browser)
 
-// ----- Chat UI helper -----
+// ---------- Chat UI helper ----------
 function addMessage(text, sender) {
-  const box = document.getElementById("chatbox");
+  const box = document.getElementById('chatbox');
   if (!box) return;
-  const div = document.createElement("div");
-  div.className = "msg " + sender;
+  const div = document.createElement('div');
+  div.className = 'msg ' + sender;
   div.textContent = text;
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
 }
 
-// Opening message
-addMessage(
-  "I'm your AITruckDispatcher. Paste a load (pay, miles, deadhead, fuel, mpg) or ask what to counter at.",
-  "bot"
-);
+// ---------- Opening line ----------
+const OPENING_LINES = [
+  "Hello, I'm your AITruckDispatcher. Tell me about a load, lane, rate, or Amazon Relay plan.",
+];
 
-// Last analyzed load, for follow-up questions
-let lastLoadStats = null;
+addMessage(OPENING_LINES[0], 'bot');
 
-// ----- Helpers -----
-function toNum(x, fallback = 0) {
-  const n = parseFloat(x);
-  return isNaN(n) ? fallback : n;
+// ---------- Small helper: read number input safely ----------
+function num(id, fallback = 0) {
+  const el = document.getElementById(id);
+  if (!el) return fallback;
+  const v = parseFloat(el.value);
+  return isNaN(v) ? fallback : v;
 }
 
-// Parse numbers from a free-text load line
-// Example: "1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7"
-function parseLoadFromText(text) {
-  const nums = (text.match(/[\d.]+/g) || []).map((s) => parseFloat(s));
-  if (nums.length < 2) return null; // need at least pay + miles
+// ---------- Lane Memory (in-page only) ----------
+// We store recent loads keyed by a simple lane label string.
+const laneMemory = {}; // { laneKey: [ {rpm, pay, miles, deadhead} ] }
 
-  const pay = nums[0];
-  const loaded = nums[1];
-  const deadhead = nums.length >= 3 ? nums[2] : 0;
-  const fuel = nums.length >= 4 ? nums[3] : 4.0;
-  const mpg = nums.length >= 5 ? nums[4] : 7.0;
+function rememberLane(laneKey, rpm, pay, miles, deadhead) {
+  if (!laneKey) return;
+  if (!laneMemory[laneKey]) laneMemory[laneKey] = [];
+  laneMemory[laneKey].push({ rpm, pay, miles, deadhead });
 
-  return { pay, loaded, deadhead, fuel, mpg };
+  // Keep only last 5 loads per lane so it won't grow forever
+  if (laneMemory[laneKey].length > 5) {
+    laneMemory[laneKey].shift();
+  }
 }
 
-// Core math for any load
-function computeStats(pay, loaded, deadhead, fuel, mpg) {
-  loaded = toNum(loaded, 0);
-  deadhead = toNum(deadhead, 0);
-  fuel = toNum(fuel, 4.0);
-  mpg = toNum(mpg, 7.0);
-  pay = toNum(pay, 0);
+function summarizeLane(laneKey) {
+  const loads = laneMemory[laneKey];
+  if (!loads || loads.length === 0) return null;
+  let totalRpm = 0;
+  let totalPay = 0;
+  let totalMiles = 0;
+  loads.forEach(l => {
+    totalRpm += l.rpm;
+    totalPay += l.pay;
+    totalMiles += l.miles;
+  });
+  const avgRpm = totalRpm / loads.length;
+  const avgPay = totalPay / loads.length;
+  const avgMiles = totalMiles / loads.length;
+  return {
+    count: loads.length,
+    avgRpm,
+    avgPay,
+    avgMiles
+  };
+}
 
-  const totalMiles = loaded + deadhead;
-  const gallons = totalMiles > 0 && mpg > 0 ? totalMiles / mpg : 0;
-  const fuelCost = gallons * fuel;
+// Try to pull a lane label from text like "NYC to Chicago", "Atlanta – Miami"
+function extractLane(text) {
+  const lower = text.toLowerCase();
+  // Very simple heuristic: look for " to "
+  const parts = lower.split(' to ');
+  if (parts.length === 2) {
+    const from = parts[0].trim();
+    const to = parts[1].trim();
+    if (from && to) {
+      return from + ' -> ' + to;
+    }
+  }
+  return null;
+}
+
+// ---------- Profit Calculator (used by button + chat) ----------
+function analyzeNumbers(pay, loadedMiles, deadheadMiles, fuelCostPerGallon, truckMpg) {
+  const totalMiles = loadedMiles + deadheadMiles;
+  const gallons = totalMiles / (truckMpg || 1);
+  const fuelCost = gallons * fuelCostPerGallon;
   const netProfit = pay - fuelCost;
-  const rpm = loaded > 0 ? pay / loaded : 0;
+  const rpm = totalMiles > 0 ? pay / totalMiles : 0;
 
-  let verdict;
-  if (rpm >= 3.0) verdict = "🔥 Excellent load. Strong RPM for most lanes.";
-  else if (rpm >= 2.5) verdict = "✅ Solid load. Above average RPM.";
-  else if (rpm >= 2.0) verdict = "🟡 Borderline. Depends on lane & market—try to bump it.";
-  else verdict = "❌ Weak load. Only take if market is dead or you need to move the truck.";
-
-  return { pay, loaded, deadhead, fuel, mpg, totalMiles, gallons, fuelCost, netProfit, rpm, verdict };
-}
-
-// Format stats as text
-function formatStats(stats) {
-  return (
-    `Pay: $${stats.pay.toFixed(2)}\n` +
-    `Loaded Miles: ${stats.loaded}\n` +
-    `Deadhead Miles: ${stats.deadhead}\n` +
-    `Total Miles: ${stats.totalMiles}\n` +
-    `Fuel Cost (est): $${stats.fuelCost.toFixed(2)}\n` +
-    `Net Profit (after fuel): $${stats.netProfit.toFixed(2)}\n` +
-    `RPM (loaded miles): $${stats.rpm.toFixed(2)}\n` +
-    `Verdict: ${stats.verdict}`
-  );
-}
-
-// ----- Negotiation logic (Style B – normal) -----
-function negotiationAdvice(stats) {
-  const rpm = stats.rpm;
-  const loaded = stats.loaded;
-
-  // Decide target RPM (normal/aggressive but realistic)
-  let targetRPM;
+  // Verdict
+  let verdict = '';
   if (rpm >= 3.0) {
-    targetRPM = rpm + 0.10; // small bump
+    verdict = '🔥 Excellent load. Strong RPM for most lanes.';
   } else if (rpm >= 2.5) {
-    targetRPM = 3.0; // push to ~3.0
+    verdict = '✅ Solid load. Above average RPM.';
   } else if (rpm >= 2.0) {
-    targetRPM = 2.6; // push to mid/upper 2s
+    verdict = '😐 Mid. Depends on lane, time, and market.';
   } else {
-    targetRPM = 2.3; // try to drag trash load into barely acceptable
+    verdict = '⚠️ Weak. Only worth it if it sets you up for a bigger move.';
   }
 
-  const currentPay = stats.pay;
-  const targetPay = targetRPM * loaded;
-  let bump = targetPay - currentPay;
-  if (bump < 0) bump = 0;
+  return { totalMiles, gallons, fuelCost, netProfit, rpm, verdict };
+}
 
-  // Round bump to a sensible number (nearest 25/50)
-  const roundedBump = Math.round(bump / 25) * 25;
-  const suggestedPay = currentPay + roundedBump;
+// ---------- Strategy Engine (Level 6) ----------
+// mode can be 'defensive', 'normal', 'aggressive'
+function buildStrategyAdvice(rpm, totalMiles, pay, laneKey, textContext) {
+  const lower = textContext.toLowerCase();
 
-  let msg = `Right now this load is about $${rpm.toFixed(2)} per loaded mile.\n`;
+  // Detect if user hinted at a style
+  let mode = 'normal';
+  if (lower.includes('aggressive') || lower.includes('push hard')) {
+    mode = 'aggressive';
+  } else if (lower.includes('play it safe') || lower.includes('defensive')) {
+    mode = 'defensive';
+  }
 
-  if (roundedBump <= 0) {
-    msg +=
-      "You’re already near or above a very strong RPM. You can still test a small bump ($50–$100), but I’d focus on locking it in fast.\n";
+  // Default recommended target RPM
+  let targetRpm;
+  if (mode === 'aggressive') {
+    targetRpm = 3.1;
+  } else if (mode === 'defensive') {
+    targetRpm = 2.5;
   } else {
-    msg +=
-      `I’d aim around **$${suggestedPay.toFixed(0)}** total pay (about $${roundedBump.toFixed(
+    targetRpm = 2.8;
+  }
+
+  // Adjust based on what it already is
+  let suggestPay = pay;
+  if (totalMiles > 0) {
+    const desiredPay = targetRpm * totalMiles;
+    if (desiredPay > pay) {
+      suggestPay = Math.round(desiredPay / 10) * 10; // round to nearest $10
+    }
+  }
+
+  // Lane intel
+  let laneLine = '';
+  if (laneKey) {
+    const stats = summarizeLane(laneKey);
+    if (stats) {
+      laneLine = `Lane history for **${laneKey}**: last ${stats.count} loads averaged about $${stats.avgRpm.toFixed(2)} RPM on ~${Math.round(stats.avgMiles)} miles. `;
+    }
+  }
+
+  // Amazon Relay / block-style hints
+  let relayLine = '';
+  if (lower.includes('relay') || lower.includes('block')) {
+    relayLine =
+      "Amazon Relay tip: watch the **return leg** and total time at the dock. A cheap outbound can be okay if the round-trip block still keeps your overall RPM strong.";
+  }
+
+  // Build natural-language suggestion
+  let advice = '';
+  if (suggestPay > pay) {
+    const diff = suggestPay - pay;
+    advice =
+      `Right now this load is around $${rpm.toFixed(2)} RPM. In **${mode.toUpperCase()}** mode, I'd aim around **$${suggestPay.toFixed(
         0
-      )} more) to bring it closer to roughly $${targetRPM.toFixed(2)} RPM.\n`;
-    msg +=
-      "Style B (normal): Start slightly higher so you can ‘meet in the middle’ and still land near that number.\n";
-  }
-
-  msg +=
-    "\nExample counter you can send:\n" +
-    `"For those miles and the deadhead on this run, I’d need to be closer to $${suggestedPay.toFixed(
-      0
-    )} to make it work. Can you get me there?"`;
-
-  return msg;
-}
-
-// ----- Take or skip advice -----
-function takeOrSkipAdvice(stats) {
-  const rpm = stats.rpm;
-  const deadRatio =
-    stats.totalMiles > 0 ? stats.deadhead / stats.totalMiles : 0;
-
-  let msg = `Take or skip?\nRPM: $${rpm.toFixed(2)} on ${stats.loaded} loaded miles and ${stats.deadhead} deadhead.\n`;
-
-  if (deadRatio > 0.35) {
-    msg += "⚠️ High deadhead percentage. This makes the load weaker.\n";
-  }
-
-  if (rpm >= 3.0) {
-    msg += "Recommendation: ✅ TAKE IT. Strong load in most markets.\n";
-  } else if (rpm >= 2.5) {
-    msg += "Recommendation: 👍 Probably take it, especially if the lane has good reloads.\n";
-  } else if (rpm >= 2.0) {
-    msg +=
-      "Recommendation: 🤔 Borderline. Take it only if the market is slow, timing is perfect, or it sets up a better reload.\n";
+      )}** total pay (≈ $${diff.toFixed(
+        0
+      )} more) to bring it closer to our target RPM.\n\n` +
+      `Example counter you can send:\n` +
+      `"With the miles and deadhead on this run, I'd need to be closer to **$${suggestPay.toFixed(
+        0
+      )}** to make it work."`;
   } else {
-    msg +=
-      "Recommendation: ❌ Usually SKIP unless you’re stuck, protecting a score, or escaping a bad area.\n";
+    advice =
+      `RPM is already strong at about $${rpm.toFixed(
+        2
+      )}. In **${mode.toUpperCase()}** mode I'd still try to bump it slightly — maybe ask for **$${(pay + 25).toFixed(
+        0
+      )}–$${(pay + 75).toFixed(
+        0
+      )}**, then settle near your current rate or a bit higher.`;
   }
 
-  return msg;
+  return { advice, laneLine, relayLine };
 }
 
-// ----- Dispatcher brain for chat -----
-function dispatcherBrain(text) {
+// ---------- Chat Understanding (Level 6) ----------
+function parseLoadDescription(text) {
   const lower = text.toLowerCase();
 
-  // If asking to counter
-  if (
-    lower.includes("counter") ||
-    lower.includes("negotiate") ||
-    lower.includes("ask for") ||
-    lower.includes("how much should i")
-  ) {
-    if (!lastLoadStats) {
-      return (
-        "Give me a load first (pay, miles, deadhead, fuel, mpg), then ask what to counter at.\n" +
-        'Example: "1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7"'
-      );
-    }
-    return negotiationAdvice(lastLoadStats);
+  // Soft defaults
+  let pay = 0;
+  let loadedMiles = 0;
+  let deadheadMiles = 0;
+  let fuel = 4.0;
+  let mpg = 7;
+
+  // Pay: look for patterns like "1500", "$1500"
+  const payMatch = lower.match(/\$?\s*(\d{3,5})\s*(pay|rate|for this|all in|total)?/);
+  if (payMatch) {
+    pay = parseFloat(payMatch[1]);
   }
 
-  // If asking take or skip
-  if (
-    lower.includes("take it") ||
-    lower.includes("skip it") ||
-    lower.includes("take or skip") ||
-    lower.includes("is this worth") ||
-    lower.includes("good or bad")
-  ) {
-    if (!lastLoadStats) {
-      return "Run the load through the calculator or paste it with numbers first, then I can tell you if it looks like a take or skip.";
-    }
-    return takeOrSkipAdvice(lastLoadStats);
+  // Miles: try to find "xxx miles", "xxx mi"
+  const milesMatches = [...lower.matchAll(/(\d{2,4})\s*(miles|mi)/g)];
+  if (milesMatches.length > 0) {
+    loadedMiles = parseFloat(milesMatches[0][1]);
+  }
+  if (milesMatches.length > 1) {
+    deadheadMiles = parseFloat(milesMatches[1][1]);
+  } else {
+    // Look for "deadhead 80" etc.
+    const dh = lower.match(/deadhead\s*(\d{1,4})/);
+    if (dh) deadheadMiles = parseFloat(dh[1]);
   }
 
-  // Try to parse a load from text
-  const parsed = parseLoadFromText(text);
-  if (parsed && parsed.pay && parsed.loaded) {
-    const stats = computeStats(
-      parsed.pay,
-      parsed.loaded,
-      parsed.deadhead,
-      parsed.fuel,
-      parsed.mpg
-    );
-    lastLoadStats = stats;
-    return (
-      "I parsed that load and ran the numbers:\n" +
-      formatStats(stats) +
-      "\n\nNow you can ask: \"What should I counter at?\" or \"Should I take it or skip it?\""
-    );
-  }
+  // Fuel cost per gallon – e.g. "fuel 4.25"
+  const fuelMatch = lower.match(/fuel\s*(\d+(\.\d+)?)/);
+  if (fuelMatch) fuel = parseFloat(fuelMatch[1]);
 
-  // RPM help
-  if (lower.includes("rpm")) {
-    return (
-      "RPM = total pay ÷ LOADED miles only.\n" +
-      "Example: $1200 on 400 loaded miles = $3.00 RPM.\n" +
-      'You can paste loads like: "1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7" and I’ll break it down.'
-    );
-  }
+  // MPG – e.g. "mpg 7"
+  const mpgMatch = lower.match(/mpg\s*(\d+(\.\d+)?)/);
+  if (mpgMatch) mpg = parseFloat(mpgMatch[1]);
 
-  // Generic help
-  if (lower.includes("help") || lower.includes("what can you do")) {
-    return (
-      "I can:\n" +
-      "• Break down loads (RPM, fuel, profit, verdict).\n" +
-      "• Suggest normal counter offers (Style B).\n" +
-      "• Tell you if a load is more like TAKE or SKIP.\n" +
-      'Try: "1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7"'
-    );
-  }
-
-  // Greeting
-  if (lower.startsWith("yo") || lower.startsWith("hi") || lower.startsWith("hello")) {
-    return (
-      "Yo. Paste a load with pay, miles, deadhead, fuel, mpg and I’ll break it down.\n" +
-      'Then ask: "What should I counter at?"'
-    );
-  }
-
-  // Fallback
-  return (
-    "I didn’t fully catch that. Try one of these:\n" +
-    '• "1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7"\n' +
-    '• "What should I counter at?" (after a load)\n' +
-    '• "Is this worth it, should I take it or skip it?"'
-  );
+  return { pay, loadedMiles, deadheadMiles, fuel, mpg };
 }
 
-// ----- Chat send handler -----
+// ---------- Core Chat Logic ----------
+function basicReply(text) {
+  const lower = text.toLowerCase();
+
+  // Help keyword
+  if (lower.includes('help')) {
+    return "Paste a load like: `1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7` or ask about RPM, counter offers, or Amazon Relay strategy.";
+  }
+
+  // If they mention just RPM
+  if (lower.includes('rpm') && !lower.match(/\d/)) {
+    return "To check RPM, drop in the **pay**, **loaded miles**, **deadhead**, fuel price and MPG. I’ll calculate RPM and tell you if the load is 🔥 or trash.";
+  }
+
+  // Try to parse a full load description
+  const { pay, loadedMiles, deadheadMiles, fuel, mpg } = parseLoadDescription(text);
+
+  if (pay > 0 && loadedMiles > 0) {
+    const calc = analyzeNumbers(pay, loadedMiles, deadheadMiles, fuel, mpg);
+
+    const laneKey = extractLane(text);
+    rememberLane(laneKey, calc.rpm, pay, loadedMiles, deadheadMiles);
+
+    const strategy = buildStrategyAdvice(
+      calc.rpm,
+      calc.totalMiles,
+      pay,
+      laneKey,
+      text
+    );
+
+    let laneLineOut = '';
+    if (strategy.laneLine) {
+      laneLineOut = '\n\n' + strategy.laneLine;
+    }
+
+    let relayLineOut = '';
+    if (strategy.relayLine) {
+      relayLineOut = '\n\n' + strategy.relayLine;
+    }
+
+    return (
+      `I parsed that load and ran the numbers:\n` +
+      `• Pay: $${pay.toFixed(2)}\n` +
+      `• Loaded Miles: ${loadedMiles}\n` +
+      `• Deadhead Miles: ${deadheadMiles}\n` +
+      `• Total Miles: ${calc.totalMiles}\n` +
+      `• Fuel Cost (est): $${calc.fuelCost.toFixed(2)}\n` +
+      `• Net Profit (after fuel): $${calc.netProfit.toFixed(2)}\n` +
+      `• RPM: $${calc.rpm.toFixed(2)}\n` +
+      `• Verdict: ${calc.verdict}\n\n` +
+      strategy.advice +
+      laneLineOut +
+      relayLineOut +
+      `\n\nYou can also plug the same numbers into the calculator below to see it laid out visually.`
+    );
+  }
+
+  // Fallback small talk
+  if (lower.includes('hi') || lower.includes('hello')) {
+    return "What’s up. Tell me about a load or lane you’re looking at and I’ll break it down.";
+  }
+
+  return "I didn’t see clear pay + miles in that. Try something like: `1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7`, or ask about RPM, counter offers, or Amazon Relay.";
+}
+
+// ---------- Wire up chat box ----------
 function sendMessage() {
-  const input = document.getElementById("userInput");
+  const input = document.getElementById('userInput');
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
-
-  addMessage(text, "user");
-  input.value = "";
-
-  const reply = dispatcherBrain(text);
-  addMessage(reply, "bot");
+  addMessage(text, 'user');
+  input.value = '';
+  const reply = basicReply(text);
+  addMessage(reply, 'bot');
 }
 
-// ----- Calculator (bottom panel) -----
+// Support pressing Enter to send
+const userInputEl = document.getElementById('userInput');
+if (userInputEl) {
+  userInputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+}
+
+// ---------- Load Profit Checker button ----------
 function analyzeLoad() {
-  const pay = toNum(document.getElementById("pay").value);
-  const loaded = toNum(document.getElementById("miles").value);
-  const deadhead = toNum(document.getElementById("deadhead").value);
-  const fuel = toNum(document.getElementById("fuel").value || 4.0);
-  const mpg = toNum(document.getElementById("mpg").value || 7.0);
+  const pay = num('pay', 0);
+  const loadedMiles = num('miles', 0);
+  const deadheadMiles = num('deadhead', 0);
+  const fuel = num('fuel', 4.0);
+  const mpg = num('mpg', 7);
 
-  const stats = computeStats(pay, loaded, deadhead, fuel, mpg);
-  lastLoadStats = stats; // sync with chat brain
+  const { totalMiles, gallons, fuelCost, netProfit, rpm, verdict } =
+    analyzeNumbers(pay, loadedMiles, deadheadMiles, fuel, mpg);
 
-  const box = document.getElementById("analysis");
-  if (!box) return;
-  box.textContent = formatStats(stats);
+  const pre = document.getElementById('analysis');
+  if (!pre) return;
+
+  const outLines = [];
+  outLines.push(`Pay: $${pay.toFixed(2)}`);
+  outLines.push(`Loaded Miles: ${loadedMiles}`);
+  outLines.push(`Deadhead Miles: ${deadheadMiles}`);
+  outLines.push(`Fuel Cost: $${fuelCost.toFixed(2)}`);
+  outLines.push(`Net Profit: $${netProfit.toFixed(2)}`);
+  outLines.push(`RPM: $${rpm.toFixed(2)}`);
+  outLines.push('');
+  outLines.push(`Verdict: ${verdict}`);
+
+  pre.textContent = outLines.join('\n');
+
+  // Also feed this to lane memory if user had a lane described in the last chat
+  // (Best effort – laneKey only when user pasted a full sentence in chat.)
 }
+
+// Expose for HTML buttons
+window.sendMessage = sendMessage;
+window.analyzeLoad = analyzeLoad;
