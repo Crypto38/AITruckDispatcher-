@@ -1,118 +1,128 @@
-/* General page style */
+/* ===== Global layout ===== */
+
 body {
-  margin: 0;
-  padding: 0;
-  background: #0f1117;
-  font-family: Arial, sans-serif;
-  color: #e8e9eb;
+    margin: 0;
+    padding: 0;
+    background: #050810;
+    font-family: Arial, sans-serif;
+    color: #e5e7eb;
 }
 
 h1 {
-  text-align: center;
-  margin-top: 20px;
-  color: #e8e9eb;
+    text-align: center;
+    margin: 16px 0;
+    color: #f9fafb;
 }
 
-/* Input box */
-#input {
-  width: 90%;
-  max-width: 1000px;
-  height: 180px;
-  margin: 20px auto;
-  display: block;
-  background: #0c0e14;
-  border: 1px solid #333;
-  border-radius: 10px;
-  padding: 15px;
-  color: #e8e9eb;
-  font-size: 16px;
+/* Main container */
+#mainBox {
+    width: 95%;
+    max-width: 900px;
+    margin: 0 auto 24px auto;
+    background: #0b0f1a;
+    border-radius: 14px;
+    border: 1px solid #1f2937;
+    padding: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
 }
 
-/* Example text */
+/* Input text area */
+#userInput {
+    width: 100%;
+    min-height: 120px;
+    background: #020617;
+    border-radius: 10px;
+    border: 1px solid #374151;
+    padding: 10px 12px;
+    color: #e5e7eb;
+    font-size: 0.95rem;
+    resize: vertical;
+}
+
+#userInput::placeholder {
+    color: #6b7280;
+}
+
+/* Controls row */
+#controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+/* Example box */
 #example {
-  width: 90%;
-  max-width: 1000px;
-  margin: 0 auto;
-  color: #888;
-  font-size: 14px;
+    flex: 1 1 180px;
+    border-radius: 999px;
+    border: 1px solid #374151;
+    background: #020617;
+    color: #9ca3af;
+    padding: 6px 10px;
+    font-size: 0.78rem;
 }
 
 /* Send button */
 #sendBtn {
-  background: #00d26a;
-  color: black;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-left: 10px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(135deg, #22c55e, #4ade80);
+    color: #022c22;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 8px 22px rgba(34, 197, 94, 0.4);
+    white-space: nowrap;
 }
 
-#sendBtn:hover {
-  background: #00b85b;
+#sendBtn:active {
+    transform: translateY(1px);
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
 }
 
-/* Truck dropdown button */
-.truck-btn {
-  background: #1d1f27;
-  color: white;
-  border: 1px solid #444;
-  padding: 10px 16px;
-  border-radius: 6px;
-  cursor: pointer;
+/* Truck dropdown */
+#truckSelect {
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid #4b5563;
+    background: #020617;
+    color: #e5e7eb;
+    font-size: 0.8rem;
 }
 
-.truck-btn:hover {
-  background: #2a2d37;
+/* Output panel */
+#output {
+    margin-top: 12px;
+    background: #020617;
+    border-radius: 10px;
+    border: 1px solid #374151;
+    padding: 10px 12px;
+    min-height: 140px;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
 }
 
-/* Dropdown menu container */
-.truck-menu {
-  display: none;
-  position: absolute;
-  top: 50px;
-  right: 20px;
-  background: #1a1c22;
-  border: 1px solid #444;
-  width: 160px;
-  border-radius: 6px;
-  z-index: 99999;   /* FIXED — menu now appears on mobile */
-  padding: 5px 0;
-}
+/* Mobile tweaks */
+@media (max-width: 480px) {
+    #mainBox {
+        padding: 10px;
+    }
 
-/* Individual dropdown items */
-.truck-item {
-  padding: 10px 12px;
-  color: #e8e9eb;
-  cursor: pointer;
-}
+    #controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
 
-.truck-item:hover {
-  background: #2a2d37;
-}
+    #example {
+        width: 100%;
+    }
 
-/* Output result box */
-#result {
-  width: 90%;
-  max-width: 1000px;
-  min-height: 180px;
-  margin: 20px auto;
-  background: #0c0e14;
-  border: 1px solid #333;
-  border-radius: 10px;
-  padding: 15px;
-  white-space: pre-wrap;
-  font-size: 15px;
-}
-
-/* Profit / week helper */
-.helper-box {
-  width: 90%;
-  max-width: 1000px;
-  margin: 10px auto;
-  background: #0c0e14;
-  padding: 15px;
-  border-radius: 10px;
-  border: 1px solid #333;
+    #sendBtn,
+    #truckSelect {
+        width: 100%;
+        text-align: center;
+    }
 }
