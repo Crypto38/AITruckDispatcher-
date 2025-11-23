@@ -1,100 +1,121 @@
-// ====== DOM HOOKS ======
+// ===== AITruckDispatcher v31 – Multi-Truck Weekly Profit =====
+
+// DOM refs
 const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
-const micBtn = document.getElementById("micBtn");
 const voiceOutToggle = document.getElementById("voiceOutToggle");
-const truckSelect = document.getElementById("truckSelect");
 const copyScriptBtn = document.getElementById("copyScriptBtn");
 const historyList = document.getElementById("historyList");
+const truckSelect = document.getElementById("truckSelect");
 
 const lastNetEl = document.getElementById("lastNet");
 const dayProfitEl = document.getElementById("dayProfit");
 const weekProfitEl = document.getElementById("weekProfit");
 
-// ====== STATE ======
-const trucks = [
-  { id: "t1", name: "Truck 1 – 2020 Cascadia", mpg: 7.0 },
-  { id: "t2", name: "Truck 2 – 2018 Volvo", mpg: 6.5 },
-  { id: "t3", name: "Truck 3 – Daycab City", mpg: 7.5 },
-  { id: "t4", name: "Truck 4 – Owner Op", mpg: 6.8 }
+// ===== STATE =====
+let lastBrokerScript = "";
+let history = [];
+
+// 10-truck fleet with placeholders + weekProfit bucket
+let trucks = [
+  { id: "t1", label: "Truck 1", mpg: 7.0, weekProfit: 0 },
+  { id: "t2", label: "Truck 2", mpg: 6.8, weekProfit: 0 },
+  { id: "t3", label: "Truck 3", mpg: 7.2, weekProfit: 0 },
+  { id: "t4", label: "Truck 4", mpg: 6.5, weekProfit: 0 },
+  { id: "t5", label: "Truck 5", mpg: 7.0, weekProfit: 0 },
+  { id: "t6", label: "Truck 6", mpg: 6.7, weekProfit: 0 },
+  { id: "t7", label: "Truck 7", mpg: 7.3, weekProfit: 0 },
+  { id: "t8", label: "Truck 8", mpg: 6.9, weekProfit: 0 },
+  { id: "t9", label: "Truck 9", mpg: 7.1, weekProfit: 0 },
+  { id: "t10", label: "Truck 10", mpg: 6.6, weekProfit: 0 }
 ];
 
-let history = []; // last loads
-let lastBrokerScript = "";
-let recognition = null;
+let selectedTruckId = "t1";
 
-// ====== INIT ======
+// ===== LOCAL STORAGE (save per-truck weekly profit) =====
+function loadTrucksFromStorage() {
+  try {
+    const raw = localStorage.getItem("aiTD_trucks_v31");
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    trucks = trucks.map((t) => {
+      const found = saved.find((s) => s.id === t.id);
+      return found
+        ? {
+            ...t,
+            weekProfit: typeof found.weekProfit === "number" ? found.weekProfit : 0
+          }
+        : t;
+    });
+  } catch (e) {
+    // ignore
+  }
+}
+
+function saveTrucksToStorage() {
+  try {
+    const skinny = trucks.map((t) => ({
+      id: t.id,
+      weekProfit: t.weekProfit
+    }));
+    localStorage.setItem("aiTD_trucks_v31", JSON.stringify(skinny));
+  } catch (e) {
+    // ignore
+  }
+}
+
+// ===== TRUCK UTILS =====
 function initTruckSelect() {
+  if (!truckSelect) return;
+  truckSelect.innerHTML = "";
   trucks.forEach((t) => {
     const opt = document.createElement("option");
     opt.value = t.id;
-    opt.textContent = t.name;
+    opt.textContent = t.label;
     truckSelect.appendChild(opt);
   });
+  truckSelect.value = selectedTruckId;
 }
 
 function getSelectedTruck() {
-  const id = truckSelect.value || trucks[0].id;
-  return trucks.find((t) => t.id === id) || trucks[0];
+  const found = trucks.find((t) => t.id === selectedTruckId);
+  return found || trucks[0];
 }
 
+function setSelectedTruck(id) {
+  selectedTruckId = id;
+  if (truckSelect) truckSelect.value = id;
+  updateProfitPanel(null); // refresh week total display
+}
+
+// ===== UI HELPERS =====
 function addMessage(text, sender = "ai") {
   const div = document.createElement("div");
-  div.className = "msg " + (sender === "user" ? "msg-user" : "msg-ai");
+  div.className = sender === "user" ? "msg msg-user" : "msg msg-ai";
   div.textContent = text;
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
 
-  if (sender === "ai" && voiceOutToggle.checked) {
+  if (sender === "ai" && voiceOutToggle && voiceOutToggle.checked) {
     speakText(text);
   }
 }
 
-// Basic TTS
 function speakText(text) {
   if (!("speechSynthesis" in window)) return;
   if (!text) return;
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 1;
-  utter.pitch = 1;
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1;
+  u.pitch = 1;
   window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utter);
+  window.speechSynthesis.speak(u);
 }
 
-// ====== VOICE INPUT ======
-function initVoiceInput() {
-  const SR =
-    window.SpeechRecognition || window.webkitSpeechRecognition || null;
-  if (!SR) {
-    micBtn.style.display = "none"; // hide mic if not supported
-    return;
-  }
-  recognition = new SR();
-  recognition.lang = "en-US";
-  recognition.interimResults = false;
-
-  recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    userInput.value = transcript;
-  };
-
-  recognition.onerror = () => {
-    // ignore errors silently for now
-  };
-}
-
-micBtn.addEventListener("click", () => {
-  if (!recognition) return;
-  recognition.start();
-});
-
-// ====== PARSE / LOGIC ======
+// ===== PARSE + ANALYZE =====
 function parseLoadText(text) {
   const nums = text.match(/[\d.]+/g);
-  if (!nums || nums.length < 4) {
-    return null;
-  }
+  if (!nums || nums.length < 4) return null;
 
   const truck = getSelectedTruck();
 
@@ -111,62 +132,59 @@ function parseLoadText(text) {
   return { pay, miles, deadhead, fuelPrice, mpg, style };
 }
 
-function analyzeLoad(data) {
-  const { pay, miles, deadhead, fuelPrice, mpg, style } = data;
+function analyzeLoad(d) {
+  const { pay, miles, deadhead, fuelPrice, mpg, style } = d;
 
   const totalMiles = miles + deadhead;
   const gallons = totalMiles / mpg;
   const fuelCost = gallons * fuelPrice;
   const netProfit = pay - fuelCost;
-  const rpm = pay / miles;
-  const deadRatio = deadhead / miles;
+  const rpm = miles > 0 ? pay / miles : 0;
+  const deadRatio = miles > 0 ? deadhead / miles : 0;
 
-  // Verdict & AI flavor
   let verdict = "";
-  let verdictEmoji = "";
+  let emoji = "";
+  let action = "";
   let laneNote = "";
   let suggestedCounter = pay;
-  let action = "";
 
   if (rpm >= 3.0) {
-    verdict = "🔥 Excellent RPM. Strong load.";
-    verdictEmoji = "💎";
-    action = "Good to TAKE or hold firm.";
+    emoji = "💎";
+    verdict = "Excellent RPM. Strong load.";
+    action = "Good to TAKE or hold firm. ";
     suggestedCounter = pay + 50;
   } else if (rpm >= 2.5) {
-    verdict = "✅ Solid RPM. Good load.";
-    verdictEmoji = "✅";
-    action = "Take or counter a little higher.";
+    emoji = "✅";
+    verdict = "Solid RPM. Good load.";
+    action = "Take or COUNTER a little higher. ";
     suggestedCounter = pay + 60;
   } else if (rpm >= 2.2) {
-    verdict = "😐 Decent but not amazing.";
-    verdictEmoji = "⚠";
-    action =
-      "OK to take if market is slow. If possible, counter $50–$100 higher.";
+    emoji = "😐";
+    verdict = "Borderline but workable.";
+    action = "OK to take if needed, but try to bump it. ";
     suggestedCounter = pay + 80;
   } else {
-    verdict = "⚠ Weak RPM. Be careful.";
-    verdictEmoji = "⚠";
-    action =
-      "Best to COUNTER hard or PASS unless market is extremely soft for you.";
+    emoji = "⚠";
+    verdict = "Weak RPM. Be careful.";
+    action = "COUNTER hard or PASS unless you must move the truck. ";
     suggestedCounter = pay + 100;
   }
 
   if (deadRatio > 0.3) {
-    laneNote += "High deadhead. Try to push rate because of empty miles. ";
-  } else if (deadRatio < 0.15 && deadhead > 0) {
-    laneNote += "Deadhead is manageable. ";
+    laneNote += "High deadhead. Push harder on rate. ";
+  } else if (deadRatio > 0) {
+    laneNote += "Deadhead is reasonable. ";
   }
 
   if (style === "aggressive") {
-    laneNote += "Aggressive mode: push harder on the counter.";
     suggestedCounter += 30;
+    laneNote += "Aggressive mode: aim higher on the counter.";
   } else {
-    laneNote += "Normal mode: prioritize consistency over max dollar.";
+    laneNote += "Normal mode: balance rate and keeping wheels turning.";
   }
 
   const dayProfit = netProfit;
-  const weekProfit = netProfit * 5; // assume 5 similar loads / week
+  const weekProfitGuess = netProfit * 5;
 
   return {
     pay,
@@ -180,12 +198,12 @@ function analyzeLoad(data) {
     rpm,
     style,
     verdict,
-    verdictEmoji,
+    emoji,
+    action,
     laneNote,
     suggestedCounter,
-    action,
     dayProfit,
-    weekProfit
+    weekProfitGuess
   };
 }
 
@@ -199,53 +217,41 @@ function buildSummaryText(result) {
     rpm,
     style,
     verdict,
-    verdictEmoji,
-    laneNote,
-    suggestedCounter,
+    emoji,
     action,
-    dayProfit,
-    weekProfit
+    laneNote,
+    suggestedCounter
   } = result;
 
-  const lines = [];
-  lines.push(
+  const truck = getSelectedTruck();
+
+  return [
+    `Truck: ${truck.label}`,
     `Pay: $${pay.toFixed(2)}  Miles: ${miles.toFixed(
       0
-    )}  Deadhead: ${deadhead.toFixed(0)}`
-  );
-  lines.push(
+    )}  Deadhead: ${deadhead.toFixed(0)}`,
     `Fuel Cost: $${fuelCost.toFixed(2)}  Net Profit: $${netProfit.toFixed(
       2
-    )}  RPM (loaded): ${rpm.toFixed(2)}`
-  );
-  lines.push(
-    `Style: ${style.toUpperCase()}  Verdict: ${verdictEmoji} ${verdict}`
-  );
-  lines.push(
+    )}  RPM (loaded): ${rpm.toFixed(2)}`,
+    `Style: ${style.toUpperCase()}  Verdict: ${emoji} ${verdict}`,
     `Suggested counter: ~$${suggestedCounter.toFixed(
       0
-    )}. Action: ${action} ${laneNote}`
-  );
-  lines.push(
-    `If you ran this load 1x/day for 5 days: Day profit ≈ $${dayProfit.toFixed(
-      2
-    )}, Week profit ≈ $${weekProfit.toFixed(2)}.`
-  );
-
-  return lines.join(" ");
+    )}. ${action}${laneNote}`
+  ].join("\n");
 }
 
 function buildBrokerScript(result) {
   const { pay, miles, deadhead, fuelCost, netProfit, suggestedCounter } =
     result;
+  const truck = getSelectedTruck();
 
   return (
     `Hi, this is [YOUR NAME] with [CARRIER]. ` +
-    `Looking at your load around ${miles.toFixed(
+    `Looking at your load for ${truck.label}, around ${miles.toFixed(
       0
     )} loaded and ${deadhead.toFixed(
       0
-    )} deadhead miles, with fuel around $${fuelCost.toFixed(
+    )} deadhead miles, with fuel cost about $${fuelCost.toFixed(
       2
     )} on this run, $${pay.toFixed(
       2
@@ -253,19 +259,35 @@ function buildBrokerScript(result) {
     `To make this work profitably, we'd need to be closer to about $${suggestedCounter.toFixed(
       0
     )} all-in. ` +
-    `That keeps us near a healthy profit (roughly $${netProfit.toFixed(
+    `That keeps us near a healthy net (roughly $${netProfit.toFixed(
       2
-    )} net). Can you get me closer to that range?`
+    )} after fuel). Can you get me closer to that range?`
   );
 }
 
-function updateProfitPanel(result) {
-  lastNetEl.textContent = `$${result.netProfit.toFixed(2)}`;
-  dayProfitEl.textContent = `$${result.dayProfit.toFixed(2)}`;
-  weekProfitEl.textContent = `$${result.weekProfit.toFixed(2)}`;
+// ===== PROFIT PANEL (per selected truck) =====
+function updateProfitPanel(resultOrNull) {
+  const truck = getSelectedTruck();
+
+  if (resultOrNull) {
+    lastNetEl.textContent = `$${resultOrNull.netProfit.toFixed(2)}`;
+    dayProfitEl.textContent = `$${resultOrNull.dayProfit.toFixed(2)}`;
+  }
+
+  weekProfitEl.textContent = `$${truck.weekProfit.toFixed(
+    2
+  )} (for ${truck.label})`;
 }
 
-// ====== HISTORY ======
+// Add profit to selected truck
+function addProfitToCurrentTruck(netProfit) {
+  const truck = getSelectedTruck();
+  truck.weekProfit += netProfit;
+  saveTrucksToStorage();
+  updateProfitPanel(null);
+}
+
+// ===== HISTORY =====
 function addToHistory(rawText, summary, brokerScript, result) {
   history.unshift({ rawText, summary, brokerScript, result });
   if (history.length > 10) history.pop();
@@ -273,87 +295,10 @@ function addToHistory(rawText, summary, brokerScript, result) {
 }
 
 function renderHistory() {
+  if (!historyList) return;
   historyList.innerHTML = "";
-  history.forEach((item, index) => {
+  history.forEach((item) => {
     const li = document.createElement("li");
     li.className = "history-item";
     const r = item.result;
-    li.textContent = `$${r.pay.toFixed(0)} · ${r.miles.toFixed(
-      0
-    )}mi · RPM ${r.rpm.toFixed(2)}`;
-    li.addEventListener("click", () => {
-      addMessage(item.rawText, "user");
-      addMessage(item.summary, "ai");
-      lastBrokerScript = item.brokerScript;
-      updateProfitPanel(item.result);
-    });
-    historyList.appendChild(li);
-  });
-}
-
-// ====== MAIN SEND HANDLER ======
-function handleSend() {
-  const text = userInput.value.trim();
-  if (!text) return;
-
-  addMessage(text, "user");
-  userInput.value = "";
-
-  const parsed = parseLoadText(text);
-  if (!parsed) {
-    const msg =
-      "Couldn't read that load. Use at least: pay miles deadhead fuel. Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive.";
-    addMessage(msg, "ai");
-    return;
-  }
-
-  const result = analyzeLoad(parsed);
-  const summary = buildSummaryText(result);
-  const brokerScript = buildBrokerScript(result);
-
-  lastBrokerScript = brokerScript;
-
-  addMessage(summary, "ai");
-  addMessage("Broker script ready. Tap 'Copy broker script' to copy.", "ai");
-
-  updateProfitPanel(result);
-  addToHistory(text, summary, brokerScript, result);
-}
-
-// ====== COPY SCRIPT BUTTON ======
-copyScriptBtn.addEventListener("click", async () => {
-  if (!lastBrokerScript) {
-    addMessage("No broker script yet. Analyze a load first.", "ai");
-    return;
-  }
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    try {
-      await navigator.clipboard.writeText(lastBrokerScript);
-      addMessage("Broker script copied to clipboard.", "ai");
-    } catch {
-      addMessage("Couldn't copy automatically. Copy manually if needed.", "ai");
-    }
-  } else {
-    addMessage("Clipboard not supported on this device.", "ai");
-  }
-});
-
-// ====== EVENTS ======
-sendBtn.addEventListener("click", handleSend);
-
-userInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    handleSend();
-  }
-});
-
-// ====== STARTUP MESSAGE ======
-initTruckSelect();
-initVoiceInput();
-
-addMessage(
-  "AITruckDispatcher v30 loaded. Enter: pay miles deadhead fuel mpg(optional) style(optional). Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive.",
-  "ai"
-);
+    li.textContent = `$${r.pay.toFixed(0)} · ${r
