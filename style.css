@@ -1,83 +1,118 @@
+/* General page style */
 body {
-  background: #0a0f18;
-  color: #fff;
+  margin: 0;
+  padding: 0;
+  background: #0f1117;
   font-family: Arial, sans-serif;
-  padding: 20px;
+  color: #e8e9eb;
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-top: 20px;
+  color: #e8e9eb;
 }
 
-.chat-box {
-  height: 300px;
-  overflow-y: auto;
-  border: 1px solid #444;
-  padding: 10px;
-  margin-bottom: 12px;
-  background: #111;
+/* Input box */
+#input {
+  width: 90%;
+  max-width: 1000px;
+  height: 180px;
+  margin: 20px auto;
+  display: block;
+  background: #0c0e14;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 15px;
+  color: #e8e9eb;
+  font-size: 16px;
 }
 
-.input-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+/* Example text */
+#example {
+  width: 90%;
+  max-width: 1000px;
+  margin: 0 auto;
+  color: #888;
+  font-size: 14px;
 }
 
-#userInput {
-  flex: 1;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background: #222;
-  color: white;
-}
-
+/* Send button */
 #sendBtn {
-  padding: 8px 14px;
-  background: #0f0;
+  background: #00d26a;
+  color: black;
   border: none;
+  padding: 10px 18px;
   border-radius: 6px;
-  font-weight: bold;
+  font-size: 16px;
   cursor: pointer;
+  margin-left: 10px;
 }
 
-/* TRUCK DROPDOWN */
-.truck-select {
-  position: relative;
+#sendBtn:hover {
+  background: #00b85b;
 }
 
-#truckBtn {
-  padding: 8px 12px;
-  background: #222;
-  border-radius: 6px;
-  cursor: pointer;
+/* Truck dropdown button */
+.truck-btn {
+  background: #1d1f27;
+  color: white;
   border: 1px solid #444;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
+.truck-btn:hover {
+  background: #2a2d37;
+}
+
+/* Dropdown menu container */
 .truck-menu {
   display: none;
   position: absolute;
-  top: 40px;
-  left: 0;
-  background: #111;
+  top: 50px;
+  right: 20px;
+  background: #1a1c22;
   border: 1px solid #444;
-  width: 120px;
+  width: 160px;
   border-radius: 6px;
-  z-index: 1000;
+  z-index: 99999;   /* FIXED — menu now appears on mobile */
+  padding: 5px 0;
 }
 
-.truck-option {
-  padding: 8px;
-  border-bottom: 1px solid #333;
+/* Individual dropdown items */
+.truck-item {
+  padding: 10px 12px;
+  color: #e8e9eb;
   cursor: pointer;
 }
 
-.truck-option:last-child {
-  border-bottom: none;
+.truck-item:hover {
+  background: #2a2d37;
 }
 
-.truck-option:hover {
-  background: #333;
+/* Output result box */
+#result {
+  width: 90%;
+  max-width: 1000px;
+  min-height: 180px;
+  margin: 20px auto;
+  background: #0c0e14;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 15px;
+  white-space: pre-wrap;
+  font-size: 15px;
+}
+
+/* Profit / week helper */
+.helper-box {
+  width: 90%;
+  max-width: 1000px;
+  margin: 10px auto;
+  background: #0c0e14;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #333;
 }
