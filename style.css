@@ -25,24 +25,92 @@ p {
 }
 
 .main {
-  width: 95%;
-  max-width: 1200px;
-  margin: 20px auto;
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
 }
 
-/* Card Style */
+/* Cards */
 .card {
   background: #161b22;
-  padding: 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
   border: 1px solid #30363d;
-}
-
-h2 {
-  margin-top: 0;
-  color: #58a6ff;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 6px;
 }
 
 .subtitle {
   color: #8b949e;
+  margin-bottom: 10px;
+}
+
+/* Chatbox */
+#chatbox {
+  height: 200px;
+  overflow-y: auto;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+}
+
+.msg {
+  margin: 5px 0;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.msg.bot {
+  background-color: #1f6feb;
+  color: white;
+}
+
+.msg.user {
+  background-color: #30363d;
+}
+
+/* Inputs */
+.input-row {
+  display: flex;
+  gap: 6px;
+}
+
+input[type="text"],
+input[type="number"] {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  color: #c9d1d9;
+  border-radius: 4px;
+}
+
+button {
+  padding: 8px 12px;
+  background: #238636;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2ea043;
+}
+
+/* Profit Checker */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+#analysis {
+  margin-top: 10px;
+  white-space: pre-wrap;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  padding: 10px;
+  border-radius: 6px;
+}
