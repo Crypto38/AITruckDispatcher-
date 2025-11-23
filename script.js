@@ -306,3 +306,44 @@ function dispatcherBrain(userText) {
     const decision = takeOrSkipAdvice(lastLoad);
     const risk = riskChecks(text, lastLoad);
     return decision + (risk ? "\n" + risk : "");
+  }
+
+  // 6. Generic RPM help
+  if (/rpm|rate per mile|how much per mile/i.test(lower)) {
+    return "To calculate RPM: divide total pay by LOADED miles only. You can paste a full load like: 1200 pay 430 miles 75 deadhead fuel 4.00 mpg 7 and I’ll break it down.";
+  }
+
+  // 7. If user just asks something general
+  if (/hello|hi|yo|hey/i.test(lower)) {
+    return "Yo. I’m your AI dispatcher. Drop a load like: 1200 pay 430 miles 75 deadhead fuel 4.00 mpg 7 or ask about a lane (NY to FL) or Amazon Relay.";
+  }
+
+  if (/help|what can you do|how to use/i.test(lower)) {
+    return "You can:\n• Paste full loads and I’ll break them down (RPM, profit, fuel, risk).\n• Ask if you should TAKE or SKIP a load after calculating it.\n• Ask what to COUNTER at based on the last load.\n• Ask about lanes like: NY to FL, GA to NJ.\n• Ask about Amazon Relay strategy.";
+  }
+
+  // Fallback
+  return "I didn’t fully catch that. Try one of these:\n" +
+    "• Paste a full load: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7\n" +
+    "• Ask: \"Is NY to FL a good lane?\"\n" +
+    "• Ask: \"What should I counter at?\" after you run a load in the calculator.\n" +
+    "• Ask an Amazon Relay question.";
+}
+
+// ---------- Send message handler (chat button) ----------
+
+function sendMessage() {
+  const input = document.getElementById('userInput');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMessage(text, 'user');
+  input.value = '';
+
+  const reply = dispatcherBrain(text);
+  addMessage(reply, 'bot');
+}
+
+// expose for HTML onclick
+window.sendMessage = sendMessage;
