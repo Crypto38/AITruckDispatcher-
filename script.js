@@ -1,77 +1,102 @@
-// ================================
-// Truck Profiles (10 trucks)
-// ================================
-let trucks = {
-  1: { mpg: 7.0, fuel: 4.25 },
-  2: { mpg: 7.0, fuel: 4.25 },
-  3: { mpg: 7.0, fuel: 4.25 },
-  4: { mpg: 7.0, fuel: 4.25 },
-  5: { mpg: 7.0, fuel: 4.25 },
-  6: { mpg: 7.0, fuel: 4.25 },
-  7: { mpg: 7.0, fuel: 4.25 },
-  8: { mpg: 7.0, fuel: 4.25 },
-  9: { mpg: 7.0, fuel: 4.25 },
-  10: { mpg: 7.0, fuel: 4.25 }
-};
+// AITruckDispatcher v30 – single-truck helper
 
-let selectedTruck = 1;
+const inputEl = document.getElementById("loadInput");
+const sendBtn = document.getElementById("sendBtn");
+const truckBtn = document.getElementById("truckBtn");
+const outputEl = document.getElementById("output");
 
-// ================================
-// Toggle dropdown menu
-// ================================
-function toggleTruckMenu() {
-  const menu = document.getElementById("truckMenu");
-  menu.style.display = menu.style.display === "block" ? "none" : "block";
+let activeTruckIndex = 0; // for future multi-truck use
+
+function addLine(text = "") {
+  outputEl.value += (outputEl.value ? "\n" : "") + text;
 }
 
-// Select truck
-function selectTruck(num) {
-  selectedTruck = num;
-  document.getElementById("truckBtn").innerText = "Truck " + num;
-  document.getElementById("truckMenu").style.display = "none";
+// Very simple RPM + fuel/ profit calculator
+function analyzeLoad(text) {
+  // Expected format: pay miles deadhead fuel mpg(optional) style(optional)
+  // Example: 1500 520 80 4.25 7 aggressive
+
+  const parts = text.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 4) {
+    return "Format: pay miles deadhead fuel mpg(optional) style(optional)\nExample: 1500 520 80 4.25 7 aggressive";
+  }
+
+  const pay = parseFloat(parts[0]);
+  const miles = parseFloat(parts[1]);
+  const dead = parseFloat(parts[2]);
+  const fuelPrice = parseFloat(parts[3]);
+
+  if ([pay, miles, dead, fuelPrice].some(v => isNaN(v))) {
+    return "Could not read numbers. Use: pay miles deadhead fuel mpg(optional) style(optional)";
+  }
+
+  const mpg = parts[4] ? parseFloat(parts[4]) : 7.0;
+  const style = (parts[5] || "normal").toLowerCase();
+
+  const totalMiles = miles + dead;
+  const fuelCost = (totalMiles / mpg) * fuelPrice;
+  const net = pay - fuelCost;
+  const rpm = pay / miles;
+
+  let verdict = "";
+  let icon = "";
+  let targetExtra = 0;
+
+  if (rpm >= 3.0) {
+    verdict = "🔥 Great load.";
+    icon = "✅";
+  } else if (rpm >= 2.5) {
+    verdict = "💎 Strong load.";
+    icon = "✅";
+    targetExtra = 50;
+  } else if (rpm >= 2.0) {
+    verdict = "⚠️ Meh. Try to bump it.";
+    icon = "⚠️";
+    targetExtra = 100;
+  } else {
+    verdict = "❌ Weak. Look for more money.";
+    icon = "❌";
+    targetExtra = 150;
+  }
+
+  // Rough suggested counter
+  const suggested = targetExtra ? pay + targetExtra : pay;
+
+  const summary = [
+    `Pay: $${pay.toFixed(2)}  Miles: ${miles}  Deadhead: ${dead}`,
+    `Fuel: $${fuelPrice.toFixed(2)}/gal  MPG: ${mpg.toFixed(2)}  Total miles: ${totalMiles}`,
+    `Fuel Cost: $${fuelCost.toFixed(2)}  Net Profit: $${net.toFixed(2)}  RPM: ${rpm.toFixed(2)}`,
+    `Style: ${style.toUpperCase()}  Verdict: ${icon} ${verdict}`,
+    `Suggested counter: ~$${suggested.toFixed(0)}`
+  ].join("\n");
+
+  return summary;
 }
 
-// ================================
-// Dispatcher Calculator
-// ================================
-function analyzeLoad() {
-  let txt = document.getElementById("input").value.trim();
-  if (!txt) return;
-
-  let mpg = trucks[selectedTruck].mpg;
-  let fuelPrice = trucks[selectedTruck].fuel;
-
-  let parts = txt.split(" ");
-  let pay = Number(parts[0]);
-  let miles = Number(parts[1]);
-  let dead = Number(parts[2]);
-
-  let fuelCost = (miles + dead) / mpg * fuelPrice;
-  let net = pay - fuelCost;
-  let rpm = pay / miles;
-
-  let verdict = (rpm >= 2.50 ? "🔥 Strong load!" : "⚠️ Weak load.");
-  let ask = pay + 60;
-
-  let out = `
-Pay: $${pay}
-Miles: ${miles}
-Deadhead: ${dead}
-Fuel Cost: $${fuelCost.toFixed(2)}
-Net Profit: $${net.toFixed(2)}
-RPM: ${rpm.toFixed(2)}
-Verdict: ${verdict}
-
-Suggested counter: ~$${ask}
-
-Broker script:
-"Hi, this is [YOUR NAME] with [CARRIER]. Looking at your load around ${miles} loaded and ${dead} deadhead miles, fuel is near $${fuelPrice}/gal and $${pay} is a bit tight. Can you get me closer to about $${ask} all-in?"
-`;
-
-  document.getElementById("result").innerText = out;
+function handleSend() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+  outputEl.value = ""; // clear for new response
+  addLine(analyzeLoad(text));
 }
 
-// ================================
-// Bind send button
-// ================================
-document.getElementById("sendBtn").onclick = analyzeLoad;
+// Wire up button + Enter key
+sendBtn.onclick = handleSend;
+inputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    handleSend();
+  }
+});
+
+// For now truck button just shows which truck is active
+if (truckBtn) {
+  truckBtn.textContent = "Truck 1";
+  truckBtn.onclick = () => {
+    alert("Multi-truck selector coming later. Right now everything uses Truck 1.");
+  };
+}
+
+// Initial hint
+addLine("AITruckDispatcher v30 loaded. Enter: pay miles deadhead fuel mpg(optional) style(optional).");
+addLine("Example: 1500 520 80 4.25 7 aggressive");
