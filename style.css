@@ -1,60 +1,61 @@
+/* ===== AITruckDispatcher v10 – Styles ===== */
+
 body {
-  margin: 0;
-  padding: 16px;
-  font-family: system-ui, sans-serif;
   background: #111;
-  color: #f5f5f5;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
 }
 
 h1 {
-  margin-bottom: 12px;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .chat-box {
-  height: 60vh;
-  border: 1px solid #444;
-  border-radius: 6px;
-  padding: 8px;
-  overflow-y: auto;
+  width: 100%;
+  height: 70vh;
   background: #000;
+  border: 1px solid #444;
+  padding: 10px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+  font-size: 16px;
 }
 
-.msg {
-  margin: 4px 0;
-  padding: 6px 8px;
-  border-radius: 4px;
-  white-space: pre-line;
+.msg-user {
+  color: #4dd2ff;
+  padding: 5px 0;
 }
 
-.msg.user {
-  background: #1e3a8a;
-  align-self: flex-end;
-}
-
-.msg.ai {
-  background: #374151;
+.msg-ai {
+  color: #9eff6e;
+  padding: 5px 0;
 }
 
 .input-row {
-  margin-top: 8px;
   display: flex;
-  gap: 6px;
+  width: 100%;
 }
 
 #userInput {
   flex: 1;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #444;
-  background: #000;
-  color: #f5f5f5;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #555;
+  background: #222;
+  color: #fff;
 }
 
 #sendBtn {
-  padding: 8px 14px;
-  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 16px;
+  margin-left: 8px;
+  background: #28a745;
+  color: white;
   border: none;
-  background: #22c55e;
-  color: #000;
-  font-weight: 600;
+}
+#sendBtn:active {
+  background: #1f7f34;
 }
