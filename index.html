@@ -1,82 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>AITruckDispatcher</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8" />
+    <title>AITruckDispatcher</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <header class="hero">
+<header class="hero">
     <h1>AITruckDispatcher</h1>
-    <p>Your 24/7 virtual truck dispatch assistant for Amazon Relay and other load boards.</p>
-  </header>
+    <p>Your 24/7 AI-powered truck dispatch assistant for Amazon Relay & load boards.</p>
+</header>
 
-  <main class="main">
+<main class="main">
+
+    <!-- Dispatcher Chat -->
     <section class="card">
-      <h2>Dispatcher AI Chat</h2>
-      <p class="subtitle">Ask about loads, lanes, RPM, routes, or Amazon Relay strategy.</p>
-      <div id="chatbox"></div>
-      <div class="input-row">
-        <input id="userInput" type="text" placeholder="Ask the dispatcher about a load..." />
-        <button onclick="sendMessage()">Send</button>
-      </div>
+        <h2>Dispatcher AI Chat</h2>
+        <p class="subtitle">Ask about loads, lanes, RPM, routes, or Amazon Relay strategy.</p>
+        <div id="chatbox"></div>
+        <div class="input-row">
+            <input id="userInput" type="text" placeholder="Ask the dispatcher about a load..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </section>
 
+    <!-- Load Profit Tool -->
     <section class="card">
-      <h2>Load Profit Checker (Level 2 Demo)</h2>
-      <p class="subtitle">Enter a load to see if it looks strong or weak.</p>
-      <div class="form-grid">
-        <label>
-          Line Haul Pay ($)
-          <input id="pay" type="number" />
-        </label>
-        <label>
-          Loaded Miles
-          <input id="miles" type="number" />
-        </label>
-        <label>
-          Deadhead Miles
-          <input id="deadhead" type="number" />
-        </label>
-        <label>
-          Fuel Cost per Gallon ($)
-          <input id="fuel" type="number" value="4.00" />
-        </label>
-        <label>
-          Truck MPG
-          <input id="mpg" type="number" value="7" />
-        </label>
-      </div>
-      <button onclick="analyzeLoad()">Analyze Load</button>
-      <pre id="analysis" class="analysis"></pre>
-    </section>
+        <h2>Load Profit Checker (Level 2 Demo)</h2>
+        <p class="subtitle">Enter a load to see profitability.</p>
 
-    <section class="card">
-      <h2>How Fleets Use AITruckDispatcher</h2>
-      <ul>
-        <li>Scan and compare loads faster than a human dispatcher.</li>
-        <li>Focus on high RPM, low deadhead, smart lanes.</li>
-        <li>Plan tomorrow's reloads while the truck is still rolling.</li>
-        <li>Use Amazon Relay smarter: protect score, reduce bad loads.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2>Payments</h2>
-      <p>You can license AITruckDispatcher to fleets and accept payments in:</p>
-      <ul>
-        <li>Bitcoin (on-chain or Lightning)</li>
-        <li>USDT / USDC (stablecoins)</li>
-        <li>Traditional payments (cash, Zelle, PayPal, etc.)</li>
-      </ul>
-      <p class="note">This is a demo site. Replace this text with your real wallet addresses or payment links when you are ready to charge clients.</p>
-    </section>
-  </main>
-
-  <footer class="footer">
-    &copy; AITruckDispatcher — Powered by your dispatch experience + automation.
-  </footer>
-
-  <script src="script.js"></script>
-</body>
-</html>
+        <div class="form-grid">
+            <label>
+                Line Haul Pay ($)
+                <input id="pay" type="number
