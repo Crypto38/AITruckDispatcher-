@@ -1,128 +1,160 @@
-/* ===== Base reset ===== */
-* {
+/* ===== Level 30A – Pro dark UI ===== */
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  background: radial-gradient(circle at top, #182848 0, #040811 45%, #020308 100%);
+  color: #f5f7ff;
+}
+
+/* App shell */
+.app-shell {
   min-height: 100vh;
-  padding: 20px 12px;
-  background: radial-gradient(circle at top, #111827 0, #020617 55%, #000 100%);
-  color: #e5e7eb;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 16px;
 }
 
-/* Make everything centered and not super wide */
-body > * {
+/* Card */
+.app-main {
   width: 100%;
-  max-width: 700px;
+  max-width: 720px;
+  background: rgba(5, 14, 35, 0.9);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(126, 199, 255, 0.15);
+  backdrop-filter: blur(10px);
 }
 
-/* ===== Title ===== */
-h1 {
-  text-align: center;
-  font-size: 1.5rem;
+/* Header */
+.app-header {
+  width: 100%;
+  max-width: 720px;
+  text-align: left;
+  margin-bottom: 10px;
+  color: #e5f2ff;
+}
+
+.app-title {
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin: 0 0 14px;
-  color: #f9fafb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
 }
 
-/* ===== Chat box (output) ===== */
-#chatBox {
-  background: #020617;
-  border-radius: 16px;
-  border: 1px solid #1f2937;
-  padding: 12px 14px 16px;
-  min-height: 260px;
-  max-height: 62vh;
+.app-subtitle {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.badge {
+  background: linear-gradient(90deg, #19d3ff, #0aff9d);
+  color: #020309;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+}
+
+/* Chat box */
+.chat-box {
+  height: 260px;
   overflow-y: auto;
-  font-size: 0.92rem;
-  line-height: 1.45;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.7);
-}
-
-/* Each message */
-.msg {
-  margin-bottom: 6px;
+  padding: 10px 8px;
+  background: radial-gradient(circle at top left, #10172a, #050818);
+  border-radius: 10px;
+  border: 1px solid rgba(148, 187, 255, 0.18);
+  margin-bottom: 10px;
+  font-size: 0.8rem;
   white-space: pre-wrap;
 }
 
-/* User line */
-.msg.user {
-  color: #bbf7d0;
-  font-weight: 500;
+/* Messages */
+.msg {
+  margin-bottom: 6px;
+  line-height: 1.4;
 }
 
-/* AI line */
-.msg.ai {
-  color: #e5e7eb;
+.msg-user {
+  color: #b4d7ff;
 }
 
-/* Optional labels */
-.msg.user::before {
-  content: "You: ";
-  font-weight: 600;
-  color: #4ade80;
+.msg-ai {
+  color: #fefefe;
 }
 
-.msg.ai::before {
-  content: "AI: ";
-  font-weight: 600;
-  color: #22c55e;
-}
-
-/* ===== Input row ===== */
-.input-row {
+/* Input area */
+.input-area {
   display: flex;
   gap: 8px;
-  align-items: center;
-  margin-top: 12px;
+  margin-bottom: 8px;
 }
 
-/* Text input */
-#userInput {
+.input-area input {
   flex: 1;
-  padding: 10px 13px;
+  padding: 8px 10px;
   border-radius: 999px;
-  border: 1px solid #374151;
-  background: #020617;
-  color: #e5e7eb;
-  font-size: 0.95rem;
+  border: 1px solid rgba(133, 180, 255, 0.5);
+  background: rgba(2, 6, 23, 0.9);
+  color: #f5f7ff;
+  font-size: 0.8rem;
 }
 
-#userInput::placeholder {
-  color: #6b7280;
+.input-area input::placeholder {
+  color: rgba(190, 210, 255, 0.45);
 }
 
-#userInput:focus {
+.input-area input:focus {
   outline: none;
-  border-color: #22c55e;
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.35);
+  border-color: #33e0ff;
+  box-shadow: 0 0 0 1px rgba(51, 224, 255, 0.4);
 }
 
-/* Send button */
-#sendBtn {
-  padding: 10px 20px;
+.input-area button {
+  padding: 8px 16px;
   border-radius: 999px;
   border: none;
-  background: linear-gradient(135deg, #22c55e, #4ade80);
-  color: #022c22;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #020617;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   cursor: pointer;
-  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.4);
-  white-space: nowrap;
-  transition: transform 0.06s ease, box-shadow 0.06s ease, filter 0.06s ease;
+  min-width: 64px;
 }
 
-#sendBtn:hover {
-  filter: brightness(1.06);
+.input-area button:active {
+  transform: scale(0.97);
 }
 
-#sendBtn:active {
-  transform: translateY(1px);
-  box-shadow: 0 6px 18px rgba(
+/* Hint + footer */
+.hint {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.app-footer {
+  width: 100%;
+  max-width: 720px;
+  text-align: left;
+  margin-top: 10px;
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
