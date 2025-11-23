@@ -1,29 +1,33 @@
-// ===== AITruckDispatcher v20 - FINAL CLEAN VERSION =====
+// ===== AITruckDispatcher v20 =====
 
-// connect UI
+// UI references
 const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
 
-// display message
+// Write message to screen
 function addMessage(text, sender = "ai") {
     const div = document.createElement("div");
-    div.className = sender === "user" ? "msg-user" : "msg-ai";
+    div.className = sender === "user" ? "msg user" : "msg ai";
     div.textContent = text;
     chatBox.appendChild(div);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// initial message
-addMessage("AITruckDispatcher v20 loaded. Enter: pay miles deadhead fuel mpg(optional) style(optional).");
+// Opening system message
+addMessage(
+    "AITruckDispatcher v20 loaded. Enter: pay miles deadhead fuel mpg(optional) style(optional)."
+);
 
-// send handler
+// Handle sending
 function handleSend() {
     const text = userInput.value.trim();
     if (!text) return;
+
     addMessage("You: " + text, "user");
     userInput.value = "";
-    analyzeLoad(text);
+
+    processLoad(text);
 }
 
 sendBtn.onclick = handleSend;
@@ -31,53 +35,49 @@ userInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") handleSend();
 });
 
-// MAIN LOGIC
-function analyzeLoad(text) {
-    const nums = text.match(/[\d.]+/g);
+// ====== Core Dispatcher Logic ======
+
+function processLoad(text) {
+    const nums = text.match(/([\d.]+)/g);
     if (!nums || nums.length < 4) {
-        addMessage("ERROR: Format must be: pay miles deadhead fuel mpg(optional) style(optional)");
+        addMessage("Invalid format. Enter: pay miles deadhead fuel mpg(optional) style(optional).");
         return;
     }
 
-    const pay       = parseFloat(nums[0]);
-    const miles     = parseFloat(nums[1]);
-    const dead      = parseFloat(nums[2]);
-    const fuelPrice = parseFloat(nums[3]);
-    const mpg       = nums[4] ? parseFloat(nums[4]) : 7;
+    let pay = parseFloat(nums[0]);
+    let miles = parseFloat(nums[1]);
+    let dead = parseFloat(nums[2]);
+    let fuel = parseFloat(nums[3]);
+    let mpg = nums[4] ? parseFloat(nums[4]) : 6.5;
 
-    let style = "NORMAL";
-    const lower = text.toLowerCase();
-    if (lower.includes("aggressive")) style = "AGGRESSIVE";
+    let parts = text.split(" ");
+    let style = parts.includes("aggressive") ? "AGGRESSIVE" : "NORMAL";
 
-    const totalMiles = miles + dead;
-    const fuelCost   = (totalMiles / mpg) * fuelPrice;
-    const net        = pay - fuelCost;
-    const rpm        = pay / miles;
+    // Calculations
+    let totalMiles = miles + dead;
+    let fuelCost = (totalMiles / mpg) * fuel;
+    let net = pay - fuelCost;
+    let rpm = pay / miles;
 
-    let verdict = "";
-    if (rpm >= 3.0) verdict = "🔥 AMAZING LOAD";
-    else if (rpm >= 2.5) verdict = "💎 STRONG LOAD";
-    else if (rpm >= 2.2) verdict = "👍 DECENT LOAD";
-    else verdict = "⚠️ WEAK — COUNTER";
+    // Determine rating
+    let verdict = "⚠️ Weak Load.";
+    let suggested = "$???";
+    let brokerNote = "";
 
-    let counterLow, counterHigh;
     if (style === "AGGRESSIVE") {
-        counterLow  = Math.round((pay + 60) / 10) * 10;
-        counterHigh = Math.round((pay + 110) / 10) * 10;
+        suggested = `$${(pay * 1.10).toFixed(0)}–$${(pay * 1.15).toFixed(0)}`;
+        if (rpm >= 2.70) verdict = "💎 Strong Load.";
+        else if (rpm >= 2.20) verdict = "👍 Decent Load.";
     } else {
-        counterLow  = Math.round((pay + 20) / 10) * 10;
-        counterHigh = Math.round((pay + 70) / 10) * 10;
+        suggested = `$${(pay * 1.03).toFixed(0)}–$${(pay * 1.07).toFixed(0)}`;
+        if (rpm >= 2.50) verdict = "💎 Strong Load.";
+        else if (rpm >= 2.00) verdict = "👍 Decent Load.";
     }
 
-    const brokerMessage =
-`"Hi, this is [YOUR NAME] with [CARRIER]. For around ${miles} loaded and ${dead} deadhead,
-at fuel about $${fuelPrice}/gal and mpg around ${mpg}, $${pay} is tight.
+    brokerNote = `Broker message: Hi, this is [YOUR NAME] with [CARRIER]. Looking at your load. For about ${miles} loaded and ${dead} deadhead at fuel around $${fuel}/gal and truck MPG approx ${mpg}, $${pay} is a bit tight for us. To make this work in a ${style === "AGGRESSIVE" ? "aggressive" : "normal"} way and still run it profitably, we'd need to be closer to about ${suggested} all-in. Can you get me closer to that range?`;
 
-To run this profitably in ${style.toLowerCase()} mode, we’d need $${counterLow}–$${counterHigh} all-in.
-
-Can you get me closer to that range?"`;
-
-    addMessage(
+    // Final output
+    let output = 
 `Pay: $${pay}
 Miles: ${miles} | Deadhead: ${dead}
 Fuel Cost: $${fuelCost.toFixed(2)}
@@ -85,9 +85,9 @@ Net Profit: $${net.toFixed(2)}
 RPM: ${rpm.toFixed(2)}
 Style: ${style}
 Verdict: ${verdict}
-Suggested counter: $${counterLow}–$${counterHigh}
+Suggested counter: ${suggested}
 
-Broker message:
-${brokerMessage}`
-    );
+${brokerNote}`;
+
+    addMessage(output);
 }
