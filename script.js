@@ -301,4 +301,100 @@ function renderHistory() {
     const li = document.createElement("li");
     li.className = "history-item";
     const r = item.result;
-    li.textContent = `$${r.pay.toFixed(0)} · ${r
+    li.textContent = `$${r.pay.toFixed(0)} · ${r.miles.toFixed(
+      0
+    )}mi · RPM ${r.rpm.toFixed(2)}`;
+    li.addEventListener("click", () => {
+      addMessage(item.rawText, "user");
+      addMessage(item.summary, "ai");
+      lastBrokerScript = item.brokerScript;
+      updateProfitPanel(item.result);
+    });
+    historyList.appendChild(li);
+  });
+}
+
+// ===== MAIN SEND HANDLER =====
+function handleSend() {
+  const text = userInput.value.trim();
+  if (!text) return;
+
+  addMessage("You: " + text, "user");
+  userInput.value = "";
+
+  const parsed = parseLoadText(text);
+  if (!parsed) {
+    addMessage(
+      "I need at least: pay miles deadhead fuel. Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive.",
+      "ai"
+    );
+    return;
+  }
+
+  const result = analyzeLoad(parsed);
+  const summary = buildSummaryText(result);
+  const brokerScript = buildBrokerScript(result);
+
+  // Save for copy button
+  lastBrokerScript = brokerScript;
+
+  // Update per-truck weekly profit
+  addProfitToCurrentTruck(result.netProfit);
+
+  // Update global profit panel (last load + truck weekly)
+  updateProfitPanel(result);
+
+  // Chat output
+  addMessage(summary, "ai");
+  addMessage(
+    "Broker script ready. Tap 'Copy broker script' to copy.",
+    "ai"
+  );
+
+  // History
+  addToHistory(text, summary, brokerScript, result);
+}
+
+// ===== BUTTON EVENTS =====
+sendBtn.addEventListener("click", handleSend);
+userInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    handleSend();
+  }
+});
+
+if (truckSelect) {
+  truckSelect.addEventListener("change", (e) => {
+    setSelectedTruck(e.target.value);
+  });
+}
+
+if (copyScriptBtn) {
+  copyScriptBtn.addEventListener("click", async () => {
+    if (!lastBrokerScript) {
+      addMessage("No broker script yet. Analyze a load first.", "ai");
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(lastBrokerScript);
+        addMessage("Broker script copied to clipboard.", "ai");
+      } catch {
+        addMessage("Couldn't copy automatically. Copy manually if needed.", "ai");
+      }
+    } else {
+      addMessage("Clipboard not supported on this device.", "ai");
+    }
+  });
+}
+
+// ===== INIT =====
+loadTrucksFromStorage();
+initTruckSelect();
+setSelectedTruck(selectedTruckId);
+
+addMessage(
+  "AITruckDispatcher v31 loaded. Select a truck, then enter: pay miles deadhead fuel mpg(optional) style(optional).",
+  "ai"
+);
