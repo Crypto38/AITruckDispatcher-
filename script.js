@@ -1,148 +1,137 @@
-/* ==========================================================
-   LEVEL 6 BRAIN FOR AITRUCKDISPATCHER
-   Full upgrade: smarter load analysis, counter offers,
-   lane knowledge, route logic, Amazon Relay strategy,
-   aggressive-mode negotiation, and high-RPM detection.
-   ========================================================== */
-
+/* ============================================================
+   LEVEL 6+ BRAIN FOR AITRUCKDISPATCHER
+   Ultra upgrade: advanced load analysis, counter-offer logic,
+   lane knowledge, Amazon Relay style logic, negotiation tone,
+   aggressive/normal/passive modes, and high-RPM detection.
+   ============================================================ */
 
 // ----- Chat UI helper -----
 function addMessage(text, sender = "bot") {
-    const box = document.getElementById("chatbox");
-    if (!box) return;
-    const div = document.createElement("div");
-    div.className = "msg " + sender;
-    div.textContent = text;
-    box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
+  const box = document.getElementById("chatbox");
+  if (!box) return;
+  const div = document.createElement("div");
+  div.className = "msg " + sender;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
 }
 
-
 // ----- Opening line -----
-addMessage("I'm your AITruckDispatcher. Paste a load (pay, miles, deadhead, fuel, mpg) or ask what to counter at.");
-
+addMessage(
+  "I'm your AITruckDispatcher. Paste a load (pay, miles, deadhead, fuel, mpg) or ask what to counter at.",
+  "bot"
+);
 
 // ----- Extract numbers from ANY load text -----
 function extractNumbers(text) {
-    const nums = text.match(/[\d\.]+/g);
-    if (!nums) return null;
-    return nums.map(Number);
+  const nums = text.match(/[\d\.]+/g);
+  if (!nums || nums.length < 3) return null;
+  return nums.map(Number);
 }
 
+// ----- Calculate load stats -----
+function analyzeLoad(pay, loadedMiles, deadMiles, fuelCost, mpg) {
+  const totalMiles = loadedMiles + deadMiles;
+  const gallons = totalMiles / mpg;
+  const fuelExpense = gallons * fuelCost;
+  const net = pay - fuelExpense;
+  const rpm = pay / loadedMiles;
 
-// ----- Main load parser -----
-function analyzeLoad(text) {
-    const nums = extractNumbers(text);
-    if (!nums || nums.length < 4) {
-        return "I need: pay, loaded miles, deadhead miles, fuel price, mpg.";
-    }
+  return {
+    totalMiles,
+    gallons,
+    fuelExpense,
+    net,
+    rpm
+  };
+}
 
-    let [pay, loaded, deadhead, fuelCost, mpg] = nums;
+// ----- Generate Counter Offer -----
+function counterOfferLogic(pay, loadedMiles, deadMiles, mode = "normal") {
+  const rpm = pay / loadedMiles;
 
-    if (!mpg) mpg = 7;
-    const totalMiles = loaded + deadhead;
-    const gallons = totalMiles / mpg;
-    const fuelExp = gallons * fuelCost;
-    const net = pay - fuelExp;
-    const rpm = pay / loaded;
+  let targetIncrease = 0;
 
-    let verdict = "";
-    if (rpm >= 3.00) verdict = "🔥 Excellent RPM. Strong load.";
-    else if (rpm >= 2.50) verdict = "✅ Solid load. Above average RPM.";
-    else verdict = "⚠️ Low RPM. Only take if it positions you well.";
+  // MODE CONTROL
+  if (mode === "passive") targetIncrease = 30;
+  if (mode === "normal") targetIncrease = 75;
+  if (mode === "aggressive") targetIncrease = 120;
 
-    return (
-        `Pay: $${pay.toFixed(2)} ` +
-        `Loaded Miles: ${loaded} ` +
-        `Deadhead Miles: ${deadhead} ` +
-        `Total Miles: ${totalMiles} ` +
-        `Fuel Cost (est): $${fuelExp.toFixed(2)} ` +
-        `Net Profit (after fuel): $${net.toFixed(2)} ` +
-        `RPM (loaded miles): $${rpm.toFixed(2)} ` +
-        `Verdict: ${verdict}`
+  // DEADHEAD PENALTY LOGIC
+  if (deadMiles > 80) targetIncrease += 50;
+  if (deadMiles > 120) targetIncrease += 100;
+
+  // LOW RPM = ask for more
+  if (rpm < 2.2) targetIncrease += 100;
+  if (rpm < 2.0) targetIncrease += 150;
+
+  const newRate = pay + targetIncrease;
+
+  let tone = "";
+  if (mode === "passive") {
+    tone = `Counter gently around $${newRate}. Say: “Could we get closer to ${newRate} to make this work with the miles?”`;
+  } else if (mode === "normal") {
+    tone = `Counter at **$${newRate}**. Say: “Given the miles & deadhead, I’d need around ${newRate} to make this run work.”`;
+  } else {
+    tone = `AGGRESSIVE: Ask for **$${newRate}**. Say: “With the mileage & deadhead this run has, I need ${newRate} to book it.”`;
+  }
+
+  return tone;
+}
+
+// ----- MAIN AI LOGIC -----
+document.getElementById("sendbtn").addEventListener("click", () => {
+  const input = document.getElementById("userinput");
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMessage(text, "user");
+  input.value = "";
+
+  // SPECIAL prompts
+  if (/counter|negotiate|what should i ask/i.test(text)) {
+    addMessage(
+      "To generate a counter offer, paste the load again OR include pay/miles/deadhead.",
+      "bot"
     );
-}
+    return;
+  }
 
+  const nums = extractNumbers(text);
+  if (!nums || nums.length < 4) {
+    addMessage("I need at least: Pay, Loaded miles, Deadhead, Fuel, MPG.", "bot");
+    return;
+  }
 
-// ----- Counter Offer Calculator -----
-function counterSuggestion(text) {
-    const nums = extractNumbers(text);
-    if (!nums || nums.length < 3) return "I need pay + loaded miles + deadhead miles.";
+  // Map values
+  const pay = nums[0];
+  const loaded = nums[1];
+  const dead = nums[2];
+  const fuel = nums[3];
+  const mpg = nums[4] ? nums[4] : 7;
 
-    let [pay, loaded, deadhead] = nums;
-    const rpm = pay / loaded;
+  const result = analyzeLoad(pay, loaded, dead, fuel, mpg);
 
-    let target = 0;
+  addMessage(
+    `I parsed that load:\nPay: $${pay.toFixed(
+      2
+    )}\nLoaded Miles: ${loaded}\nDeadhead Miles: ${dead}\nFuel Cost (est): $${result.fuelExpense.toFixed(
+      2
+    )}\nNet Profit (after fuel): $${result.net.toFixed(
+      2
+    )}\nRPM (loaded miles): $${result.rpm.toFixed(2)}`
+  );
 
-    if (rpm < 2.0) target = loaded * 3.0;
-    else if (rpm < 2.50) target = loaded * 2.85;
-    else if (rpm < 2.80) target = loaded * 3.00;
-    else target = loaded * 3.10;
+  // RPM evaluation
+  let verdict = "";
+  if (result.rpm >= 3.00) verdict = "🔥 Amazing load. High RPM.";
+  else if (result.rpm >= 2.50) verdict = "💎 Very good load. Above average RPM.";
+  else if (result.rpm >= 2.20) verdict = "👍 Decent load. Acceptable.";
+  else verdict = "⚠️ Weak RPM. Should counter.";
 
-    const ask = Math.round(target);
+  addMessage(`Verdict: ${verdict}`, "bot");
 
-    return (
-        `Based on this load’s RPM, you should counter around **$${ask}**. ` +
-        `Start slightly high so you can “meet in the middle.”`
-    );
-}
-
-
-// ----- Route logic -----
-function routeKnowledge(text) {
-    text = text.toLowerCase();
-
-    if (text.includes("atlanta") && text.includes("chicago")) {
-        return "Atlanta → Chicago lanes often pay $2.60–$3.10 RPM depending on season. Avoid Chicago suburbs unless delivery times are flexible. Counter high.";
-    }
-
-    if (text.includes("nyc") || text.includes("new york")) {
-        return "NYC lanes require higher pay due to tolls + traffic. Minimum RPM should be $3.25+.";
-    }
-
-    if (text.includes("texas")) {
-        return "Texas outbound loads pay weaker. If it's going INTO Texas, negotiate high leaving it.";
-    }
-
-    return null;
-}
-
-
-// ----- Aggressive Negotiation Mode -----
-function aggressiveMode(text) {
-    return (
-        "AGGRESSIVE MODE ENABLED:\n" +
-        "• Start very high: ask +$150–$250 over your target.\n" +
-        "• Mention deadhead + fuel cost.\n" +
-        "• Say: “For those miles, this load must be at least ___.”\n" +
-        "• Don’t accept low-ball counters—make THEM chase YOU."
-    );
-}
-
-
-// ----- MASTER RESPONDER -----
-function respond(text) {
-
-    if (text.toLowerCase().includes("aggressive")) {
-        return aggressiveMode(text);
-    }
-
-    if (text.toLowerCase().includes("counter")) {
-        return counterSuggestion(text);
-    }
-
-    const lane = routeKnowledge(text);
-    if (lane) return lane + "\n\n" + analyzeLoad(text);
-
-    return analyzeLoad(text);
-}
-
-
-// ----- SEND BUTTON -----
-function sendChat() {
-    const input = document.getElementById("user-input").value.trim();
-    if (!input) return;
-    addMessage(input, "user");
-    const response = respond(input);
-    addMessage(response, "bot");
-}
+  // Auto counter suggestion
+  const recommendation = counterOfferLogic(pay, loaded, dead, "normal");
+  addMessage(recommendation, "bot");
+});
