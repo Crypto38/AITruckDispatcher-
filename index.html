@@ -1,86 +1,171 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Truck Dispatcher v30</title>
+  <title>AI TruckDispatcher v30</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<style>
+  <style>
     body {
-        background: #0b0f19;
-        color: white;
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 20px;
+      margin: 0;
+      padding: 16px;
+      background: #050810;
+      color: #e5e7eb;
+      font-family: Arial, sans-serif;
     }
+
     h1 {
-        text-align: center;
-        margin-bottom: 20px;
+      text-align: center;
+      margin-bottom: 16px;
     }
+
     textarea {
-        width: 100%;
-        height: 120px;
-        background: #111827;
-        color: white;
-        border: 1px solid #4b5563;
-        padding: 10px;
-        font-size: 16px;
-        border-radius: 6px;
+      width: 100%;
+      min-height: 100px;
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid #1f2937;
+      border-radius: 6px;
+      padding: 8px;
+      box-sizing: border-box;
+      font-size: 14px;
     }
-    #sendBtn {
-        margin-top: 10px;
-        padding: 10px 20px;
-        background: #10b981;
-        border: none;
-        border-radius: 6px;
-        font-size: 16px;
-        cursor: pointer;
+
+    small {
+      display: block;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      color: #9ca3af;
     }
-    #output {
-        margin-top: 25px;
-        background: #111827;
-        padding: 20px;
-        border-radius: 6px;
-        border: 1px solid #374151;
-        white-space: normal;
+
+    #controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
     }
+
+    button {
+      padding: 8px 16px;
+      background: #16a34a;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+    }
+
     select {
-        padding: 6px;
-        background: #1f2937;
-        color: white;
-        border-radius: 6px;
+      padding: 6px;
+      background: #1f2937;
+      color: white;
+      border-radius: 6px;
+      border: 1px solid #374151;
     }
-</style>
 
+    #output {
+      margin-top: 12px;
+    }
+
+    .summaryBox {
+      background: #020617;
+      border-radius: 10px;
+      border-left: 4px solid #4b5563;
+      padding: 12px;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+    }
+
+    .summaryBox.good {
+      border-left-color: #22c55e;
+    }
+    .summaryBox.borderline {
+      border-left-color: #eab308;
+    }
+    .summaryBox.weak {
+      border-left-color: #ef4444;
+    }
+    .summaryBox.aggressive {
+      border-left-color: #f97316;
+    }
+
+    #history {
+      margin-top: 16px;
+      font-size: 0.8rem;
+    }
+
+    #historyTitle {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .history-item {
+      border-top: 1px solid #1f2937;
+      padding-top: 4px;
+      margin-top: 4px;
+      color: #9ca3af;
+    }
+
+    @media (max-width: 480px) {
+      #controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      button,
+      select {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
 </head>
+
 <body>
+  <h1>AI TruckDispatcher v30</h1>
 
-<h1>AI TruckDispatcher v30</h1>
+  <textarea
+    id="userInput"
+    placeholder="Type a load like: 1500 pay 520 miles 80 deadhead 4.25 fuel 7 mpg, normal or aggressive">
+  </textarea>
 
-<textarea id="userInput" placeholder="Type a load like: 1500 pay 520 miles 80 deadhead 4.25 fuel 7 mpg, normal"></textarea>
+  <small>
+    Example: 1500 pay · 520 miles · 80 deadhead · fuel 4.25 · mpg 7 · aggressive
+  </small>
 
-<br>
-<small>Example: 1500 pay · 520 miles · 80 deadhead · fuel 4.25 · mpg 7 · aggressive</small>
-<br><br>
+  <div id="controls">
+    <button id="sendBtn">Send</button>
 
-<button id="sendBtn">Send</button>
+    <select id="truckSelect">
+      <option>Truck 1</option>
+      <option>Truck 2</option>
+      <option>Truck 3</option>
+      <option>Truck 4</option>
+      <option>Truck 5</option>
+      <option>Truck 6</option>
+      <option>Truck 7</option>
+      <option>Truck 8</option>
+      <option>Truck 9</option>
+      <option>Truck 10</option>
+    </select>
 
-<select id="truckSelect">
-    <option>Truck 1</option>
-    <option>Truck 2</option>
-    <option>Truck 3</option>
-    <option>Truck 4</option>
-    <option>Truck 5</option>
-    <option>Truck 6</option>
-    <option>Truck 7</option>
-    <option>Truck 8</option>
-    <option>Truck 9</option>
-    <option>Truck 10</option>
-</select>
+    <select id="loadType">
+      <option value="Dry Van">Dry Van</option>
+      <option value="Reefer">Reefer</option>
+      <option value="Flatbed">Flatbed</option>
+      <option value="Step Deck">Step Deck</option>
+      <option value="Power Only">Power Only</option>
+      <option value="Oversized">Oversized</option>
+      <option value="Hazmat">Hazmat</option>
+    </select>
+  </div>
 
-<div id="output"></div>
+  <div id="output"></div>
 
-<script src="script.js"></script>
+  <div id="history">
+    <div id="historyTitle">History</div>
+    <!-- items get added here -->
+  </div>
 
+  <script src="script.js"></script>
 </body>
 </html>
