@@ -1,13 +1,13 @@
-// AITruckDispatcher v30 – with truck & load type + history
+// AITruckDispatcher v30 – 10 trucks, load types, color verdicts, and PERMANENT HISTORY
 
 document.getElementById("sendBtn").addEventListener("click", () => {
-  const raw = document.getElementById("userInput").value || "";
+  const raw = (document.getElementById("userInput").value || "").trim();
   const output = document.getElementById("output");
   const truckSelect = document.getElementById("truckSelect");
-  const loadTypeSelect = document.getElementById("loadTypeSelect");
+  const loadTypeSelect = document.getElementById("loadType"); // HTML select id="loadType"
   const historyDiv = document.getElementById("history");
 
-  if (!raw.trim()) {
+  if (!raw) {
     output.innerHTML = "Please enter load details.";
     return;
   }
@@ -31,7 +31,7 @@ document.getElementById("sendBtn").addEventListener("click", () => {
   const loadType = loadTypeSelect ? (loadTypeSelect.value || "Dry Van") : "Dry Van";
 
   // ---------- EXTRACT NUMBERS IN ORDER ----------
-  // Works with: "1500 pay 520 miles 80 deadhead 4.25 fuel 7 mpg"
+  // Works with: "1500 pay 520 miles 80 deadhead 4.25 fuel 7 mpg aggressive"
   const nums = raw.match(/[\d.]+/g)?.map(Number) || [];
 
   let pay       = nums[0] || 0;
@@ -48,8 +48,8 @@ document.getElementById("sendBtn").addEventListener("click", () => {
   // ---------- DETECT STYLE FROM KEYWORDS ----------
   const lower = raw.toLowerCase();
   let style = "normal";
-  if (lower.includes("agg"))     style = "aggressive";
-  if (lower.includes("normal"))  style = "normal";
+  if (lower.includes("agg"))    style = "aggressive";
+  if (lower.includes("normal")) style = "normal";
 
   // ---------- CALCULATIONS ----------
   const totalMiles = miles + deadhead;
@@ -72,7 +72,7 @@ document.getElementById("sendBtn").addEventListener("click", () => {
     brokerScript =
       "Hi, this is dispatch for " + truckName + ".\n" +
       "We have a " + loadType + " load: " + miles + " miles + " + deadhead + " deadhead.\n" +
-      "Fuel is around $" + fuelPrice.toFixed(2) + ".\n" +
+      "Fuel is around $" + fuelPrice.toFixed(2) + ". RPM is " + rpm.toFixed(2) + ".\n" +
       "We're looking for about $" + counter.toFixed(0) + " all in to make this work.";
   } else {
     if (rpm >= 2.2) {
@@ -86,4 +86,79 @@ document.getElementById("sendBtn").addEventListener("click", () => {
       verdictClass = "weak";
     }
 
-    const counter = pay
+    const counter = pay + 25;
+    suggestion = "Normal mode: Ask for around $" + counter.toFixed(0) + ".";
+
+    brokerScript =
+      "Hi, this is dispatch for " + truckName + ".\n" +
+      "Looking at " + miles + " miles + " + deadhead + " deadhead (" + loadType + " load).\n" +
+      "Fuel is $" + fuelPrice.toFixed(2) + ". Pay is $" + pay.toFixed(2) + ".\n" +
+      "Can you get closer to $" + counter.toFixed(0) + "?";
+  }
+
+  // ---------- OUTPUT CARD ----------
+  output.innerHTML = `
+    <div class="summaryBox ${verdictClass}">
+      <strong>RESULTS:</strong><br><br>
+      Truck: ${truckName}<br>
+      Load Type: ${loadType}<br>
+      Pay: $${pay.toFixed(2)}<br>
+      Miles: ${miles}<br>
+      Deadhead: ${deadhead}<br>
+      Total Miles: ${totalMiles}<br>
+      Fuel Price: $${fuelPrice.toFixed(2)}<br>
+      MPG: ${mpg.toFixed(1)}<br>
+      Fuel Cost: $${fuelCost.toFixed(2)}<br>
+      Net Profit: $${netProfit.toFixed(2)}<br>
+      RPM: ${rpm.toFixed(2)}<br><br>
+      Verdict: ${verdict}<br>
+      Suggestion: ${suggestion}<br><br>
+      <strong>Broker Script:</strong><br>
+      ${brokerScript.replace(/\n/g, "<br>")}
+    </div>
+  `;
+
+  // ---------- HISTORY ENTRY ----------
+  if (historyDiv) {
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString();
+
+    const item = document.createElement("div");
+    item.className = "history-item";
+    item.innerHTML = `
+      <div><strong>${timestamp}</strong> - ${truckName} (${loadType})</div>
+      <div>Pay $${pay.toFixed(0)}, Miles ${miles}, DH ${deadhead}, RPM ${rpm.toFixed(2)}</div>
+    `;
+    historyDiv.appendChild(item);
+    saveHistory(); // save after adding new item
+  }
+});
+
+// ---------- SAVE HISTORY TO LOCAL STORAGE ----------
+function saveHistory() {
+  const historyEl = document.getElementById("history");
+  if (!historyEl) return;
+  const html = historyEl.innerHTML;
+  try {
+    localStorage.setItem("dispatcherHistory", html);
+  } catch (e) {
+    console.warn("Could not save history:", e);
+  }
+}
+
+// ---------- LOAD HISTORY FROM LOCAL STORAGE ----------
+function loadHistory() {
+  const historyEl = document.getElementById("history");
+  if (!historyEl) return;
+  try {
+    const stored = localStorage.getItem("dispatcherHistory");
+    if (stored) {
+      historyEl.innerHTML = stored;
+    }
+  } catch (e) {
+    console.warn("Could not load history:", e);
+  }
+}
+
+// load saved history when page opens
+loadHistory();
