@@ -1,44 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AITruckDispatcher v30</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
 <h1>AITruckDispatcher v30</h1>
 
-<div id="mainBox">
-    <textarea id="userInput" placeholder="Type a load like: 1500 520 80"></textarea>
+<textarea id="userInput" placeholder="Type a load like: 1500 520 80"></textarea>
 
-    <div id="controls">
-        <input id="example" 
-               type="text" 
-               value="Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive" 
-               readonly>
-        <button id="sendBtn">Send</button>
+<p>Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive</p>
 
-        <select id="truckSelect">
-            <option>Truck 1</option>
-            <option>Truck 2</option>
-            <option>Truck 3</option>
-            <option>Truck 4</option>
-            <option>Truck 5</option>
-            <option>Truck 6</option>
-            <option>Truck 7</option>
-            <option>Truck 8</option>
-            <option>Truck 9</option>
-            <option>Truck 10</option>
-        </select>
-    </div>
+<button id="sendBtn">Send</button>
 
-    <div id="output"></div>
-</div>
+<select id="truckSelect">
+    <option>Truck 1</option>
+    <option>Truck 2</option>
+    <option>Truck 3</option>
+</select>
+
+<div id="output"></div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
