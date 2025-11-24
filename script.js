@@ -1,25 +1,32 @@
-document.getElementById("sendBtn").addEventListener("click", function () {
-    const input = document.getElementById("userInput").value.trim();
+document.getElementById("sendBtn").addEventListener("click", () => {
+    const raw = document.getElementById("userInput").value.toLowerCase();
     const output = document.getElementById("output");
     const truck = document.getElementById("truckSelect").value;
 
-    if (!input) {
+    if (!raw.trim()) {
         output.innerHTML = "Please enter load info.";
         return;
     }
 
-    const parts = input.split(" ");
-    let pay = parseFloat(parts[0]);
-    let miles = parseFloat(parts[1]);
-    let deadhead = parseFloat(parts[2]) || 0;
-    let fuelPrice = parseFloat(parts[3]) || 4.25;
-    let mpg = parseFloat(parts[4]) || 7;
-    let style = parts[5] ? parts[5].toLowerCase() : "normal";
+    // Extract all numbers in the order they appear
+    const nums = raw.match(/[\d.]+/g)?.map(Number) || [];
 
+    let pay = nums[0] || 0;
+    let miles = nums[1] || 0;
+    let deadhead = nums[2] || 0;
+    let fuelPrice = nums[3] || 0;
+    let mpg = nums[4] || 7; // default 7 MPG
+
+    // Detect style automatically
+    let style = "normal";
+    if (raw.includes("agg")) style = "aggressive";
+    if (raw.includes("normal")) style = "normal";
+
+    // Calculations
     let totalMiles = miles + deadhead;
     let fuelCost = (totalMiles / mpg) * fuelPrice;
     let netProfit = pay - fuelCost;
-    let rpm = pay / miles;
+    let rpm = miles > 0 ? pay / miles : 0;
 
     let verdict = "";
     let suggestion = "";
@@ -27,45 +34,45 @@ document.getElementById("sendBtn").addEventListener("click", function () {
 
     if (style === "aggressive") {
         verdict = "🔥 Aggressive Mode";
-        suggestion = "Ask for at least $50 more.";
+        suggestion = "Ask for at least $" + (pay + 50);
 
         let counter = pay + 50;
 
         brokerScript =
-            `Hi, this is dispatch for ${truck}.\n` +
-            `${miles} loaded miles + ${deadhead} deadhead.\n` +
-            `We are seeing fuel at ${fuelPrice} and ${mpg} MPG.\n` +
-            `Can you get us to **$${counter}** on this?`;
-
+`Hi, this is dispatch for ${truck}.
+For this load: ${miles} miles + ${deadhead} deadhead.
+Fuel is around $${fuelPrice}. We need about $${counter} all-in.
+Can you get us closer to that?`;
     } else {
-        if (rpm >= 2.2) verdict = "✅ Good Load";
-        else if (rpm >= 1.8) verdict = "⚠️ Meh Load";
-        else verdict = "❌ Weak Load";
+        if (rpm >= 2.2) verdict = "✅ Good load";
+        else if (rpm >= 1.8) verdict = "⚠️ Mid load";
+        else verdict = "❌ Weak load";
 
-        suggestion = "Normal mode: Ask for $25 more.";
+        suggestion = "Normal mode: Ask for around $" + (pay + 25);
 
         let counter = pay + 25;
 
         brokerScript =
-            `Hi, this is dispatch for ${truck}.\n` +
-            `${miles} miles + ${deadhead} deadhead.\n` +
-            `Pay is $${pay}. Can you get closer to **$${counter}**?`;
+`Hi, this is dispatch for ${truck}.
+Looking at ${miles} miles + ${deadhead} deadhead.
+Fuel is $${fuelPrice}. Pay is $${pay}. Can you get closer to $${counter}?`;
     }
 
+    // Output
     output.innerHTML = `
-        <strong>RESULTS:</strong><br><br>
-        Pay: $${pay}<br>
-        Miles: ${miles}<br>
-        Deadhead: ${deadhead}<br>
-        Total Miles: ${totalMiles}<br>
-        Fuel Cost: $${fuelCost.toFixed(2)}<br>
-        Net Profit: $${netProfit.toFixed(2)}<br>
-        RPM: ${rpm.toFixed(2)}<br><br>
+<strong>RESULTS:</strong><br><br>
+Pay: $${pay}<br>
+Miles: ${miles}<br>
+Deadhead: ${deadhead}<br>
+Total Miles: ${totalMiles}<br>
+Fuel Cost: $${fuelCost.toFixed(2)}<br>
+Net Profit: $${netProfit.toFixed(2)}<br>
+RPM: ${rpm.toFixed(2)}<br><br>
 
-        Verdict: ${verdict}<br>
-        Suggestion: ${suggestion}<br><br>
+Verdict: ${verdict}<br>
+Suggestion: ${suggestion}<br><br>
 
-        <strong>Broker Script:</strong><br>
-        ${brokerScript.replace(/\n/g, "<br>")}
-    `;
+<strong>Broker Script:</strong><br>
+${brokerScript.replace(/\n/g, "<br>")}
+`;
 });
