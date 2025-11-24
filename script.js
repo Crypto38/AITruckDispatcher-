@@ -1,14 +1,14 @@
-// AITruckDispatcher v30 – with load type, colors, and history
+// AITruckDispatcher v30 – with truck & load type + history
 
 document.getElementById("sendBtn").addEventListener("click", () => {
   const raw = document.getElementById("userInput").value || "";
   const output = document.getElementById("output");
   const truckSelect = document.getElementById("truckSelect");
-  const loadTypeSelect = document.getElementById("loadType");
+  const loadTypeSelect = document.getElementById("loadTypeSelect");
   const historyDiv = document.getElementById("history");
 
   if (!raw.trim()) {
-    output.innerHTML = "Please enter load details first.";
+    output.innerHTML = "Please enter load details.";
     return;
   }
 
@@ -28,10 +28,10 @@ document.getElementById("sendBtn").addEventListener("click", () => {
 
   const truckName = truckSelect.value || "Truck 1";
   const profile = truckProfiles[truckName] || truckProfiles["Truck 1"];
-  const loadType = loadTypeSelect.value || "Dry Van";
+  const loadType = loadTypeSelect ? (loadTypeSelect.value || "Dry Van") : "Dry Van";
 
   // ---------- EXTRACT NUMBERS IN ORDER ----------
-  // Works with "1500 pay 520 miles 80 deadhead 4.25 fuel 7 mpg, aggressive"
+  // Works with: "1500 pay 520 miles 80 deadhead 4.25 fuel 7 mpg"
   const nums = raw.match(/[\d.]+/g)?.map(Number) || [];
 
   let pay       = nums[0] || 0;
@@ -40,16 +40,16 @@ document.getElementById("sendBtn").addEventListener("click", () => {
   let fuelPrice = nums[3] || 0;
   let mpg       = nums[4] || 0;
 
-  // ---------- IF FUEL OR MPG MISSING, USE TRUCK DEFAULTS ----------
+  // ---------- IF FUEL OR MPG MISSING, USE TRUCK DEFAULT ----------
   if (!fuelPrice) fuelPrice = profile.fuelPrice;
-  if (!mpg)       mpg = profile.mpg;
-  if (!mpg)       mpg = 7; // safety default
+  if (!mpg)       mpg       = profile.mpg;
+  if (!mpg)       mpg       = 7; // safety default
 
   // ---------- DETECT STYLE FROM KEYWORDS ----------
   const lower = raw.toLowerCase();
   let style = "normal";
-  if (lower.includes("agg")) style = "aggressive";
-  if (lower.includes("normal")) style = "normal";
+  if (lower.includes("agg"))     style = "aggressive";
+  if (lower.includes("normal"))  style = "normal";
 
   // ---------- CALCULATIONS ----------
   const totalMiles = miles + deadhead;
@@ -72,8 +72,8 @@ document.getElementById("sendBtn").addEventListener("click", () => {
     brokerScript =
       "Hi, this is dispatch for " + truckName + ".\n" +
       "We have a " + loadType + " load: " + miles + " miles + " + deadhead + " deadhead.\n" +
-      "Fuel is around $" + fuelPrice.toFixed(2) + ". RPM is " + rpm.toFixed(2) + ".\n" +
-      "We're looking for about $" + counter.toFixed(0) + " all in. Can you get us there?";
+      "Fuel is around $" + fuelPrice.toFixed(2) + ".\n" +
+      "We're looking for about $" + counter.toFixed(0) + " all in to make this work.";
   } else {
     if (rpm >= 2.2) {
       verdict = "✅ Good Load";
@@ -86,49 +86,4 @@ document.getElementById("sendBtn").addEventListener("click", () => {
       verdictClass = "weak";
     }
 
-    const counter = pay + 25;
-    suggestion = "Normal mode: Ask for around $" + counter.toFixed(0);
-
-    brokerScript =
-      "Hi, this is dispatch for " + truckName + ".\n" +
-      "Looking at " + miles + " miles + " + deadhead + " deadhead (" + loadType + " load).\n" +
-      "Fuel is about $" + fuelPrice.toFixed(2) + ". Pay is $" + pay.toFixed(2) + ".\n" +
-      "Can you get closer to $" + counter.toFixed(0) + "?";
-  }
-
-  // ---------- OUTPUT ----------
-  output.innerHTML = `
-    <div class="summaryBox ${verdictClass}">
-      <strong>RESULTS:</strong><br><br>
-      Truck: ${truckName}<br>
-      Load Type: ${loadType}<br>
-      Pay: $${pay.toFixed(2)}<br>
-      Miles: ${miles}<br>
-      Deadhead: ${deadhead}<br>
-      Total Miles: ${totalMiles}<br>
-      Fuel Price: $${fuelPrice.toFixed(2)}<br>
-      MPG: ${mpg.toFixed(1)}<br>
-      Fuel Cost: $${fuelCost.toFixed(2)}<br>
-      Net Profit: $${netProfit.toFixed(2)}<br>
-      RPM: ${rpm.toFixed(2)}<br><br>
-      Verdict: ${verdict}<br>
-      Suggestion: ${suggestion}<br><br>
-      <strong>Broker Script:</strong><br>
-      ${brokerScript.replace(/\n/g, "<br>")}
-    </div>
-  `;
-
-  // ---------- HISTORY ----------
-  if (historyDiv) {
-    const now = new Date();
-    const timestamp = now.toLocaleTimeString();
-
-    const item = document.createElement("div");
-    item.className = "history-item";
-    item.innerHTML = `
-      <div><strong>${timestamp}</strong> – ${truckName} (${loadType})</div>
-      <div>Pay $${pay.toFixed(0)}, Miles ${miles}, RPM ${rpm.toFixed(2)}, ${verdict}</div>
-    `;
-    historyDiv.appendChild(item);
-  }
-});
+    const counter = pay
