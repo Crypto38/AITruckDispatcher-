@@ -4,23 +4,36 @@
     <title>AITruckDispatcher v30</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<h1>AITruckDispatcher v30</h1>
+<div id="mainBox">
 
-<textarea id="userInput" placeholder="Type a load like: 1500 520 80"></textarea>
+    <h1>AITruckDispatcher v30</h1>
 
-<p>Example: 1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 aggressive</p>
+    <!-- Load Input -->
+    <textarea id="userInput" placeholder="Type a load like: 1500 520 80 4.25 7 aggressive"></textarea>
 
-<button id="sendBtn">Send</button>
+    <!-- Example Line -->
+    <div id="example">
+        Example: 1500 pay · 520 miles · 80 deadhead · fuel 4.25 · mpg 7 · aggressive
+    </div>
 
-<select id="truckSelect">
-    <option>Truck 1</option>
-    <option>Truck 2</option>
-    <option>Truck 3</option>
-</select>
+    <!-- Button + Truck Select -->
+    <div id="controls">
+        <button id="sendBtn">Send</button>
 
-<div id="output"></div>
+        <select id="truckSelect">
+            <option>Truck 1</option>
+            <option>Truck 2</option>
+            <option>Truck 3</option>
+        </select>
+    </div>
+
+    <!-- Output -->
+    <div id="output"></div>
+
+</div>
 
 <script src="script.js"></script>
 </body>
