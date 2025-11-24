@@ -1,40 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>AITruckDispatcher v30</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Truck Dispatcher v30</title>
 
+<style>
+    body {
+        background: #0b0f19;
+        color: white;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+    }
+    h1 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    textarea {
+        width: 100%;
+        height: 120px;
+        background: #111827;
+        color: white;
+        border: 1px solid #4b5563;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 6px;
+    }
+    #sendBtn {
+        margin-top: 10px;
+        padding: 10px 20px;
+        background: #10b981;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    #output {
+        margin-top: 25px;
+        background: #111827;
+        padding: 20px;
+        border-radius: 6px;
+        border: 1px solid #374151;
+        white-space: normal;
+    }
+    select {
+        padding: 6px;
+        background: #1f2937;
+        color: white;
+        border-radius: 6px;
+    }
+</style>
+
+</head>
 <body>
 
-<div id="mainBox">
+<h1>AI TruckDispatcher v30</h1>
 
-    <h1>AITruckDispatcher v30</h1>
+<textarea id="userInput" placeholder="Type a load like: 1500 pay 520 miles 80 deadhead 4.25 fuel 7 mpg, normal"></textarea>
 
-    <!-- Load Input -->
-    <textarea id="userInput" placeholder="Type a load like: 1500 520 80 4.25 7 aggressive"></textarea>
+<br>
+<small>Example: 1500 pay · 520 miles · 80 deadhead · fuel 4.25 · mpg 7 · aggressive</small>
+<br><br>
 
-    <!-- Example Line -->
-    <div id="example">
-        Example: 1500 pay · 520 miles · 80 deadhead · fuel 4.25 · mpg 7 · aggressive
-    </div>
+<button id="sendBtn">Send</button>
 
-    <!-- Button + Truck Select -->
-    <div id="controls">
-        <button id="sendBtn">Send</button>
+<select id="truckSelect">
+    <option>Truck 1</option>
+    <option>Truck 2</option>
+    <option>Truck 3</option>
+    <option>Truck 4</option>
+    <option>Truck 5</option>
+    <option>Truck 6</option>
+    <option>Truck 7</option>
+    <option>Truck 8</option>
+    <option>Truck 9</option>
+    <option>Truck 10</option>
+</select>
 
-        <select id="truckSelect">
-            <option>Truck 1</option>
-            <option>Truck 2</option>
-            <option>Truck 3</option>
-        </select>
-    </div>
-
-    <!-- Output -->
-    <div id="output"></div>
-
-</div>
+<div id="output"></div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
