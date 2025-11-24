@@ -1,77 +1,68 @@
 document.getElementById("sendBtn").addEventListener("click", () => {
-    const raw = document.getElementById("userInput").value;
+
+    const raw = document.getElementById("userInput").value.toLowerCase();
     const output = document.getElementById("output");
     const truck = document.getElementById("truckSelect").value;
 
     if (!raw.trim()) {
-        output.innerHTML = "Please enter load info!";
+        output.innerHTML = "Enter load info.";
         return;
     }
 
-    // Find ALL numbers in the string in the order they appear
+    // extract ALL numbers in the order they appear
     const nums = raw.match(/[\d.]+/g)?.map(Number) || [];
 
     let pay       = nums[0] || 0;
     let miles     = nums[1] || 0;
     let deadhead  = nums[2] || 0;
-    let fuelPrice = nums[3] || 0;
+    let fuel      = nums[3] || 0;
     let mpg       = nums[4] || 7;
 
-    // Detect style from keywords anywhere in input
-    let style = "normal";
-    if (raw.toLowerCase().includes("agg")) style = "aggressive";
-    if (raw.toLowerCase().includes("normal")) style = "normal";
+    // choose style automatically
+    let style = raw.includes("agg") ? "aggressive" : "normal";
 
-    // Calculations
-    let totalMiles = miles + deadhead;
-    let fuelCost = mpg > 0 ? (totalMiles / mpg) * fuelPrice : 0;
-    let netProfit = pay - fuelCost;
-    let rpm = miles > 0 ? pay / miles : 0;
+    // calculations
+    const totalMiles = miles + deadhead;
+    const fuelCost = (totalMiles / mpg) * fuel;
+    const net = pay - fuelCost;
+    const rpm = miles ? pay / miles : 0;
 
-    let verdict = "";
-    let suggestion = "";
-    let brokerScript = "";
+    let verdict;
+    let askPrice;
+    let script;
 
     if (style === "aggressive") {
         verdict = "🔥 Aggressive Mode";
-        suggestion = "Ask for at least $50 more";
-        let counter = pay + 50;
-
-        brokerScript =
+        askPrice = pay + 50;
+        script =
 `Hi, this is dispatch for ${truck}.
-For this load: ${miles} miles + ${deadhead} deadhead.
-Fuel is around $${fuelPrice}. We need about $${counter}.
-Can you get us closer to that?`;
-
+${miles} miles + ${deadhead} DH.
+Fuel ~$${fuel}. We need $${askPrice}.`;
     } else {
-        if (rpm >= 2.2) verdict = "✅ Good load";
-        else if (rpm >= 1.8) verdict = "⚠️ Mid load";
-        else verdict = "❌ Weak load";
+        if (rpm >= 2.2) verdict = "✅ Good Load";
+        else if (rpm >= 1.8) verdict = "⚠️ Mid Load";
+        else verdict = "❌ Weak Load";
 
-        suggestion = "Normal mode: Ask for $25 more";
-        let counter = pay + 25;
-
-        brokerScript =
+        askPrice = pay + 25;
+        script =
 `Hi, this is dispatch for ${truck}.
-Looking at ${miles} miles + ${deadhead} deadhead.
-Fuel is $${fuelPrice}. Pay is $${pay}. Can you get closer to $${counter}?`;
+${miles} miles + ${deadhead} DH.
+Fuel $${fuel}. Can you get us to $${askPrice}?`;
     }
 
-    // Output
     output.innerHTML = `
-<strong>RESULTS:</strong><br><br>
+<strong>RESULTS</strong><br><br>
 Pay: $${pay}<br>
 Miles: ${miles}<br>
 Deadhead: ${deadhead}<br>
 Total Miles: ${totalMiles}<br>
 Fuel Cost: $${fuelCost.toFixed(2)}<br>
-Net Profit: $${netProfit.toFixed(2)}<br>
+Net Profit: $${net.toFixed(2)}<br>
 RPM: ${rpm.toFixed(2)}<br><br>
 
-Verdict: ${verdict}<br>
-Suggestion: ${suggestion}<br><br>
+Verdict: ${verdict}<br><br>
 
 <strong>Broker Script:</strong><br>
-${brokerScript.replace(/\n/g, "<br>")}
+${script.replace(/\n/g,"<br>")}
 `;
 });
