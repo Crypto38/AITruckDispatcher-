@@ -1,9 +1,11 @@
-// AITruckDispatcher v30 - FULL SCRIPT WITH 10 TRUCKS
+// AITruckDispatcher v30 – with load type, colors, and history
 
 document.getElementById("sendBtn").addEventListener("click", () => {
-  const raw = document.getElementById("userInput").value;
+  const raw = document.getElementById("userInput").value || "";
   const output = document.getElementById("output");
   const truckSelect = document.getElementById("truckSelect");
+  const loadTypeSelect = document.getElementById("loadType");
+  const historyDiv = document.getElementById("history");
 
   if (!raw.trim()) {
     output.innerHTML = "Please enter load details first.";
@@ -26,9 +28,10 @@ document.getElementById("sendBtn").addEventListener("click", () => {
 
   const truckName = truckSelect.value || "Truck 1";
   const profile = truckProfiles[truckName] || truckProfiles["Truck 1"];
+  const loadType = loadTypeSelect.value || "Dry Van";
 
   // ---------- EXTRACT NUMBERS IN ORDER ----------
-  // Works with: "1500 pay 520 miles 80 deadhead fuel 4.25 mpg 7 normal"
+  // Works with "1500 pay 520 miles 80 deadhead 4.25 fuel 7 mpg, aggressive"
   const nums = raw.match(/[\d.]+/g)?.map(Number) || [];
 
   let pay       = nums[0] || 0;
@@ -37,10 +40,10 @@ document.getElementById("sendBtn").addEventListener("click", () => {
   let fuelPrice = nums[3] || 0;
   let mpg       = nums[4] || 0;
 
-  // ---------- IF FUEL OR MPG MISSING, USE TRUCK DEFAULT ----------
+  // ---------- IF FUEL OR MPG MISSING, USE TRUCK DEFAULTS ----------
   if (!fuelPrice) fuelPrice = profile.fuelPrice;
-  if (!mpg) mpg = profile.mpg;
-  if (!mpg) mpg = 7; // safety default
+  if (!mpg)       mpg = profile.mpg;
+  if (!mpg)       mpg = 7; // safety default
 
   // ---------- DETECT STYLE FROM KEYWORDS ----------
   const lower = raw.toLowerCase();
@@ -50,59 +53,82 @@ document.getElementById("sendBtn").addEventListener("click", () => {
 
   // ---------- CALCULATIONS ----------
   const totalMiles = miles + deadhead;
-  const fuelCost = mpg > 0 ? (totalMiles / mpg) * fuelPrice : 0;
-  const netProfit = pay - fuelCost;
-  const rpm = miles > 0 ? pay / miles : 0;
+  const fuelCost   = mpg > 0 ? (totalMiles / mpg) * fuelPrice : 0;
+  const netProfit  = pay - fuelCost;
+  const rpm        = miles > 0 ? pay / miles : 0;
 
   // ---------- VERDICT / SUGGESTION / SCRIPT ----------
   let verdict = "";
   let suggestion = "";
   let brokerScript = "";
+  let verdictClass = "borderline";
 
   if (style === "aggressive") {
     verdict = "🔥 Aggressive Mode";
-    suggestion = "Ask for at least $50 more if RPM allows.";
+    verdictClass = "aggressive";
     const counter = pay + 50;
+    suggestion = "Aggressive mode: Ask for at least $" + counter.toFixed(0);
 
     brokerScript =
       "Hi, this is dispatch for " + truckName + ".\n" +
-      "For this load: " + miles + " miles + " + deadhead + " deadhead.\n" +
-      "Fuel is around $" + fuelPrice.toFixed(2) + ". We need about $" +
-      counter.toFixed(0) + " all in to make this work. Can you get us closer to that?";
+      "We have a " + loadType + " load: " + miles + " miles + " + deadhead + " deadhead.\n" +
+      "Fuel is around $" + fuelPrice.toFixed(2) + ". RPM is " + rpm.toFixed(2) + ".\n" +
+      "We're looking for about $" + counter.toFixed(0) + " all in. Can you get us there?";
   } else {
     if (rpm >= 2.2) {
       verdict = "✅ Good Load";
+      verdictClass = "good";
     } else if (rpm >= 1.8) {
       verdict = "⚠️ Borderline Load";
+      verdictClass = "borderline";
     } else {
       verdict = "❌ Weak Load";
+      verdictClass = "weak";
     }
 
     const counter = pay + 25;
-    suggestion = "Normal mode: Ask for around $" + counter.toFixed(0) + ".";
+    suggestion = "Normal mode: Ask for around $" + counter.toFixed(0);
 
     brokerScript =
       "Hi, this is dispatch for " + truckName + ".\n" +
-      "Looking at " + miles + " miles + " + deadhead + " deadhead.\n" +
-      "Fuel is $" + fuelPrice.toFixed(2) + ". Pay is $" + pay.toFixed(2) +
-      ". Can you get us closer to $" + counter.toFixed(0) + "?";
+      "Looking at " + miles + " miles + " + deadhead + " deadhead (" + loadType + " load).\n" +
+      "Fuel is about $" + fuelPrice.toFixed(2) + ". Pay is $" + pay.toFixed(2) + ".\n" +
+      "Can you get closer to $" + counter.toFixed(0) + "?";
   }
 
   // ---------- OUTPUT ----------
-  output.innerHTML =
-    "<strong>RESULTS:</strong><br><br>" +
-    "Truck: " + truckName + "<br>" +
-    "Pay: $" + pay.toFixed(2) + "<br>" +
-    "Miles: " + miles.toFixed(0) + "<br>" +
-    "Deadhead: " + deadhead.toFixed(0) + "<br>" +
-    "Total Miles: " + totalMiles.toFixed(0) + "<br>" +
-    "Fuel Price: $" + fuelPrice.toFixed(2) + "<br>" +
-    "MPG: " + mpg.toFixed(1) + "<br>" +
-    "Fuel Cost: $" + fuelCost.toFixed(2) + "<br>" +
-    "Net Profit: $" + netProfit.toFixed(2) + "<br>" +
-    "RPM: " + rpm.toFixed(2) + "<br><br>" +
-    "Verdict: " + verdict + "<br>" +
-    "Suggestion: " + suggestion + "<br><br>" +
-    "<strong>Broker Script:</strong><br>" +
-    brokerScript.replace(/\n/g, "<br>");
+  output.innerHTML = `
+    <div class="summaryBox ${verdictClass}">
+      <strong>RESULTS:</strong><br><br>
+      Truck: ${truckName}<br>
+      Load Type: ${loadType}<br>
+      Pay: $${pay.toFixed(2)}<br>
+      Miles: ${miles}<br>
+      Deadhead: ${deadhead}<br>
+      Total Miles: ${totalMiles}<br>
+      Fuel Price: $${fuelPrice.toFixed(2)}<br>
+      MPG: ${mpg.toFixed(1)}<br>
+      Fuel Cost: $${fuelCost.toFixed(2)}<br>
+      Net Profit: $${netProfit.toFixed(2)}<br>
+      RPM: ${rpm.toFixed(2)}<br><br>
+      Verdict: ${verdict}<br>
+      Suggestion: ${suggestion}<br><br>
+      <strong>Broker Script:</strong><br>
+      ${brokerScript.replace(/\n/g, "<br>")}
+    </div>
+  `;
+
+  // ---------- HISTORY ----------
+  if (historyDiv) {
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString();
+
+    const item = document.createElement("div");
+    item.className = "history-item";
+    item.innerHTML = `
+      <div><strong>${timestamp}</strong> – ${truckName} (${loadType})</div>
+      <div>Pay $${pay.toFixed(0)}, Miles ${miles}, RPM ${rpm.toFixed(2)}, ${verdict}</div>
+    `;
+    historyDiv.appendChild(item);
+  }
 });
