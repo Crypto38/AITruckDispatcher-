@@ -1,15 +1,14 @@
-document.getElementById("sendBtn").addEventListener("click", () => {
+document.getElementById("sendBtn").addEventListener("click", function () {
     const input = document.getElementById("userInput").value.trim();
     const output = document.getElementById("output");
     const truck = document.getElementById("truckSelect").value;
 
     if (!input) {
-        output.innerHTML = "Please enter load details.";
+        output.innerHTML = "Please enter load info.";
         return;
     }
 
     const parts = input.split(" ");
-
     let pay = parseFloat(parts[0]);
     let miles = parseFloat(parts[1]);
     let deadhead = parseFloat(parts[2]) || 0;
@@ -26,35 +25,33 @@ document.getElementById("sendBtn").addEventListener("click", () => {
     let suggestion = "";
     let brokerScript = "";
 
-    // Style logic
     if (style === "aggressive") {
-        if (rpm >= 2.5) verdict = "🔥 STRONG LOAD";
-        else if (rpm >= 2.0) verdict = "⚠️ OK load";
-        else verdict = "❌ Weak load";
+        verdict = "🔥 Aggressive Mode";
+        suggestion = "Ask for at least $50 more.";
 
         let counter = pay + 50;
-        suggestion = `Aggressive mode: Ask for around $${counter}.`;
 
         brokerScript =
-            `Hi, this is dispatch for ${truck}. Looking at your load ` +
-            `(${miles} miles, ${deadhead} deadhead). At fuel near $${fuelPrice}/gal ` +
-            `${pay} is a little tight. For aggressive mode we need about $${counter} all-in. ` +
-            `Can you get us closer to that range?`;
+            `Hi, this is dispatch for ${truck}.\n` +
+            `${miles} loaded miles + ${deadhead} deadhead.\n` +
+            `We are seeing fuel at ${fuelPrice} and ${mpg} MPG.\n` +
+            `Can you get us to **$${counter}** on this?`;
+
     } else {
-        if (rpm >= 2.2) verdict = "✅ Good load";
-        else if (rpm >= 1.8) verdict = "⚠️ Borderline";
-        else verdict = "❌ Weak load";
+        if (rpm >= 2.2) verdict = "✅ Good Load";
+        else if (rpm >= 1.8) verdict = "⚠️ Meh Load";
+        else verdict = "❌ Weak Load";
+
+        suggestion = "Normal mode: Ask for $25 more.";
 
         let counter = pay + 25;
-        suggestion = `Normal mode: Ask for around $${counter}.`;
 
         brokerScript =
-            `Hi, this is dispatch for ${truck}. Reviewing your load ` +
-            `${miles} miles + ${deadhead} deadhead. With fuel costs we would need around $${counter} all-in. ` +
-            `Can you get closer to that range?`;
+            `Hi, this is dispatch for ${truck}.\n` +
+            `${miles} miles + ${deadhead} deadhead.\n` +
+            `Pay is $${pay}. Can you get closer to **$${counter}**?`;
     }
 
-    // Output
     output.innerHTML = `
         <strong>RESULTS:</strong><br><br>
         Pay: $${pay}<br>
@@ -69,6 +66,6 @@ document.getElementById("sendBtn").addEventListener("click", () => {
         Suggestion: ${suggestion}<br><br>
 
         <strong>Broker Script:</strong><br>
-        ${brokerScript}
+        ${brokerScript.replace(/\n/g, "<br>")}
     `;
 });
